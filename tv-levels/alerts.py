@@ -4,18 +4,17 @@
 Each tick: fetch the latest price for every ticker in levels.csv (yfinance batch), compare it with the
 price from the previous tick, and alert on every level crossed in between (Run, Worry, Clear, each TP),
 up or down, once price is 0.5 daily ATR past the level (chop inside that band doesn't alert), plus an early "approaching" heads-up when price gets within approach_pct of a level,
-via Telegram (proflex-telegram-bot, group chat) and email (Gmail SMTP). The WhatsApp bridge is kept but off.
+via Telegram (proflex-telegram-bot, group chat).
 Zones: RUN < run <= WORRY < worry <= NEUTRAL < clear <= CLEAR < tp1 <= TAKE PROFIT [TP2...]
 
   python3 alerts.py tick      # one pass (launchd runs this every minute)
+  python3 alerts.py force     # one pass even when the market is closed
   python3 alerts.py status    # print current price/zone for every ticker, no alerts
-  python3 alerts.py test      # send a test message on both channels
+  python3 alerts.py test      # send a test message
 """
 import os
-import csv, json, smtplib, ssl, sys, time, urllib.request
+import csv, json, sys, time, urllib.request
 from datetime import datetime
-from email.mime.text import MIMEText
-from email.utils import formatdate
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -25,16 +24,8 @@ STATE = HERE / "alert_state.json"
 STALE_FILE = HERE / "stale.json"   # edited from the localhost:8765 dashboard
 LOG = HERE / "alerts.log"
 
-CHANNELS = {"telegram": True, "email": True, "whatsapp": False}   # WhatsApp bridge retired 2026-10-07 for Telegram
 TG_DIR = HERE.parent / "bot" if (HERE.parent / "bot").exists() else HERE.parent / "proflex-telegram-bot"
 
-WA_RECIPIENT = os.environ.get("WA_RECIPIENT", "")   # "Parth 2" contact; set via env, never committed
-WA_URL = "http://127.0.0.1:8080/api/send"
-WA_TOKEN = HERE.parent / "whatsapp-mcp" / "whatsapp-bridge" / "store" / ".api_token"
-
-EMAIL_FROM = "parth@proflexfinance.com"
-EMAIL_TO = "parth@proflexfinance.com"
-PW_FILE = Path.home() / ".proflex" / "proflex-email.txt"
 
 ATR_MULT = 0.5             # default only: stale.json "atr_mult" overrides it. A cross only counts once price is
                            # this many daily ATRs past the level; until then the ticker keeps its old zone
@@ -142,25 +133,6 @@ def price(sym):
     return closes[-1] if (EXTENDED_HOURS and closes) else res["meta"]["regularMarketPrice"]
 
 
-def send_whatsapp(text):
-    req = urllib.request.Request(
-        WA_URL, data=json.dumps({"recipient": WA_RECIPIENT, "message": text}).encode(),
-        headers={"Content-Type": "application/json", "X-Bridge-Token": WA_TOKEN.read_text().strip()})
-    with urllib.request.urlopen(req, timeout=60) as r:
-        res = json.load(r)
-    if not res.get("success"):
-        raise RuntimeError(res)
-
-
-def send_email(subject, body):
-    msg = MIMEText(body, "plain", "utf-8")
-    msg["Subject"], msg["From"], msg["To"], msg["Date"] = subject, EMAIL_FROM, EMAIL_TO, formatdate(localtime=True)
-    pw = PW_FILE.read_text().strip().replace(" ", "")
-    with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=ssl.create_default_context(), timeout=25) as s:
-        s.login(EMAIL_FROM, pw)
-        s.sendmail(EMAIL_FROM, [EMAIL_TO], msg.as_string())
-
-
 def send_telegram(text):
     if str(TG_DIR) not in sys.path:
         sys.path.insert(0, str(TG_DIR))
@@ -168,16 +140,11 @@ def send_telegram(text):
     tg.send_message(tg.target(tg.config().get("levels_target", "group")), text)
 
 
-def notify(subject, body, email=True):
-    senders = {"telegram": lambda: send_telegram(body), "whatsapp": lambda: send_whatsapp(body),
-               "email": lambda: send_email(subject, body)}
-    for name, fn in senders.items():
-        if not CHANNELS[name] or (name == "email" and not email):
-            continue
-        try:
-            fn()
-        except Exception as e:
-            log(f"!! {name} send failed: {e}")
+def notify(subject, body):
+    try:
+        send_telegram(body)
+    except Exception as e:
+        log(f"!! telegram send failed: {e}")
 
 
 def fmt(x):
@@ -348,8 +315,7 @@ def approaches(sym, p, lv, near, pct, crossed):
         near[n] = today
         if n in crossed:
             continue
-        notify(f"Proflex Levels: {sym} near {n} {fmt(L)} ({p:.2f})", approach_text(sym, p, lv, n, L, below, dist),
-               email=False)
+        notify(f"Proflex Levels: {sym} near {n} {fmt(L)} ({p:.2f})", approach_text(sym, p, lv, n, L, below, dist))
         log(f"NEAR {sym} @ {p:.2f}  {dist:.2f}% {'below' if below else 'above'} {n} {fmt(L)}")
 
 
@@ -486,9 +452,10 @@ if __name__ == "__main__":
     cmd = sys.argv[1] if len(sys.argv) > 1 else "tick"
     if cmd == "tick":
         tick()
+    elif cmd == "force":   # one pass even outside market hours (manual test runs)
+        tick(force=True)
     elif cmd == "status":
         status()
     elif cmd == "test":
-        notify("Proflex Levels: test alert", "✅ Proflex Levels alerts are wired up ("
-               + " + ".join(k for k, v in CHANNELS.items() if v) + ").")
+        notify("Proflex Levels: test alert", "✅ Proflex Levels alerts are wired up (Telegram).")
         log("test alert sent")

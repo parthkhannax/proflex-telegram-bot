@@ -3,19 +3,32 @@
 Messages are written WhatsApp-style (*bold*) so the same text works in every channel; to_html() converts
 them for Telegram's HTML parse mode after escaping, so tickers/prices can never break the markup.
 """
-import http.client, json, re, socket, threading, time, uuid
+import http.client, json, os, re, socket, threading, time, uuid
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-CONFIG = HERE / "config.json"
+SETTINGS = HERE / "settings.json"   # schedules and options only; secrets come from the environment
+SECRETS = ("token", "admin_chat_id", "group_chat_id")
+
+
+def _chat_id(name):
+    v = os.environ.get(name, "").strip()
+    return int(v) if v else None
 
 
 def config():
-    return json.loads(CONFIG.read_text())
+    cfg = json.loads(SETTINGS.read_text())
+    cfg["token"] = os.environ["TELEGRAM_BOT_TOKEN"]
+    cfg["admin_chat_id"] = _chat_id("TELEGRAM_ADMIN_CHAT_ID")
+    cfg["group_chat_id"] = _chat_id("TELEGRAM_GROUP_CHAT_ID")
+    if os.environ.get("LEVELS_TARGET"):
+        cfg["levels_target"] = os.environ["LEVELS_TARGET"]
+    return cfg
 
 
 def save_config(cfg):
-    CONFIG.write_text(json.dumps(cfg, indent=1))
+    """Persist settings only; a group change has to be made in the TELEGRAM_GROUP_CHAT_ID secret."""
+    SETTINGS.write_text(json.dumps({k: v for k, v in cfg.items() if k not in SECRETS}, indent=1) + "\n")
 
 
 def target(name="group"):

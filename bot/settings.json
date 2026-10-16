@@ -1,0 +1,61 @@
+{
+ "schedule": {
+  "snapshots": {
+   "time": "20:00",
+   "days": "mon-fri",
+   "tz": "Asia/Kolkata",
+   "enabled": true
+  },
+  "snapshots_11pm": {
+   "time": "23:00",
+   "days": "mon-fri",
+   "tz": "Asia/Kolkata",
+   "enabled": true
+  },
+  "snapshots_close": {
+   "time": "01:30",
+   "days": "tue-sat",
+   "tz": "Asia/Kolkata",
+   "enabled": true
+  },
+  "levels_board": {
+   "time": "09:35",
+   "days": "mon-fri",
+   "tz": "America/New_York",
+   "enabled": true
+  },
+  "levels_summary": {
+   "time": "01:30",
+   "days": "tue-sat",
+   "tz": "Asia/Kolkata",
+   "enabled": true
+  },
+  "scorecard": {
+   "time": "16:15",
+   "days": "mon-fri",
+   "tz": "America/New_York",
+   "enabled": true
+  },
+  "week_ahead": {
+   "time": "18:00",
+   "days": "mon",
+   "tz": "Asia/Kolkata",
+   "enabled": true
+  },
+  "day_ahead": {
+   "time": "19:00",
+   "days": "mon-fri",
+   "tz": "Asia/Kolkata",
+   "enabled": true
+  }
+ },
+ "levels_target": "group",
+ "summary_pct": 2,
+ "stale_reminder": {
+  "enabled": true,
+  "every_min": 60,
+  "from": "09:00",
+  "to": "02:00",
+  "tz": "Asia/Kolkata"
+ }
+}

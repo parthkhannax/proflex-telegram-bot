@@ -1,0 +1,49 @@
+name: Levels alerts
+
+on:
+  schedule:
+    - cron: "*/5 13-20 * * 1-5"   # UTC; alerts.py itself skips anything outside US market hours
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "tick (market hours only), force (run now), status (print zones), test (send a test message)"
+        type: choice
+        options: [force, tick, status, test]
+        default: force
+
+concurrency:
+  group: levels-alerts
+  cancel-in-progress: false
+
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_ADMIN_CHAT_ID: ${{ secrets.TELEGRAM_ADMIN_CHAT_ID }}
+      TELEGRAM_GROUP_CHAT_ID: ${{ secrets.TELEGRAM_GROUP_CHAT_ID }}
+      # "admin" = your private chat. Set the repo variable LEVELS_TARGET=group at cutover, once the Mac alerts are off.
+      LEVELS_TARGET: ${{ vars.LEVELS_TARGET || 'admin' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements-levels.txt
+      - run: pip install -r requirements-levels.txt
+      # alert_state.json carries zones, cooldowns and "already alerted today" between runs
+      - uses: actions/cache/restore@v4
+        with:
+          path: tv-levels/alert_state.json
+          key: levels-state-${{ github.run_id }}
+          restore-keys: levels-state-
+      - run: python3 tv-levels/alerts.py ${{ inputs.mode || 'tick' }}
+      - run: tail -n 40 tv-levels/alerts.log 2>/dev/null || true
+        if: always()
+      - uses: actions/cache/save@v4
+        if: always() && hashFiles('tv-levels/alert_state.json') != ''
+        with:
+          path: tv-levels/alert_state.json
+          key: levels-state-${{ github.run_id }}

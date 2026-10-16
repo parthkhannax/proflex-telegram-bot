@@ -7,3 +7,4 @@ out/
 bot/out/
 .tv-profile/
 *.bak*
+tv-levels/alert_state.json
