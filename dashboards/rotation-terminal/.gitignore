@@ -1,0 +1,5 @@
+alert_config.json
+alert_state.json
+__pycache__/
+launchd.server.log
+launchd.alerts.log

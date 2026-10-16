@@ -1,0 +1,9 @@
+config.json
+state.json
+.env
+*.log
+__pycache__/
+out/
+bot/out/
+.tv-profile/
+*.bak*

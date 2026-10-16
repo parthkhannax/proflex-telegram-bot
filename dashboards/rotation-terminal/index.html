@@ -1,0 +1,1284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Proflex — Rotation Terminal</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+.viz-root{
+  --surface-1:#fcfcfb; --text-primary:#14161a; --text-secondary:#52514e; --muted:#8a8880;
+  --line:#e5e2da; --gold:#a68a3e;
+  --sec-semis:#eb6834; --sec-tech:#2a78d6; --sec-space:#4a3aa7; --sec-def:#1baf7a; --sec-etf:#6b7280;
+  --sec-mem:#c2185b;
+  --good:#0ca30c; --warning:#fab219; --serious:#ec835a; --critical:#d03b3b;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#faf9f6;color:var(--text-primary);font-family:Inter,system-ui,sans-serif;font-size:14px}
+.wrap{max-width:1200px;margin:0 auto;padding:26px 20px 80px}
+h1{font-family:'Playfair Display',serif;font-size:29px;margin:0}
+header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid var(--gold);padding-bottom:13px;margin-bottom:20px;gap:12px;flex-wrap:wrap}
+.sub{color:var(--text-secondary);font-size:12.5px;margin-top:4px}
+button{font-family:inherit;font-size:12px;border:1px solid var(--line);background:#fff;padding:8px 14px;border-radius:5px;cursor:pointer}
+button:hover{border-color:var(--gold)}
+.card{background:#fff;border:1px solid var(--line);border-radius:8px;padding:18px 20px;margin-bottom:18px}
+.card h2{font-family:'Playfair Display',serif;font-size:18px;margin:0 0 3px}
+.step{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--gold);font-weight:600;margin-bottom:5px}
+.hint{color:var(--text-secondary);font-size:12.5px;margin:0 0 16px;line-height:1.55}
+.headline{font-size:16px;line-height:1.6;padding:15px 17px;border-left:3px solid var(--gold);background:#fdfcf8;border-radius:0 6px 6px 0}
+.live{margin-top:13px;font-size:12.5px;line-height:1.55;padding:10px 14px;border-radius:6px;background:#fff8e6;border:1px solid #f0dfae;color:#6b5310}
+.settled{margin-top:13px;font-size:12.5px;padding:10px 14px;border-radius:6px;background:#f4f8f4;border:1px solid #d8e6d8;color:#2f5b33}
+.note{font-size:12.5px;line-height:1.6;padding:11px 15px;border-radius:6px;background:#f6f7f9;border:1px solid #e2e5ea;color:#3d434d;margin-top:14px}
+.legend{display:flex;gap:15px;font-size:12px;color:var(--text-secondary);margin-bottom:12px;flex-wrap:wrap;align-items:center}
+.legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th{text-align:right;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-secondary);border-bottom:1px solid var(--line);padding:8px;font-weight:600}
+th:first-child,td:first-child{text-align:left}
+td{text-align:right;padding:9px 8px;border-bottom:1px solid #f2f0ea}
+tr:hover td{background:#fdfcf8}
+.up{color:var(--good)}.dn{color:var(--critical)}
+.nm{font-weight:600}.tk{color:var(--muted);font-size:11.5px;margin-left:5px}
+.pill{display:inline-block;font-size:10.5px;font-weight:600;padding:3px 9px;border-radius:99px;color:#fff;white-space:nowrap}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px;vertical-align:0}
+.why{color:var(--text-secondary);font-size:12px}
+.scroll{overflow-x:auto}
+svg{display:block;max-width:100%}
+.loading{color:var(--text-secondary);padding:50px;text-align:center}
+.toolbar{display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin:4px 0 16px}
+.toolbar .grp{display:flex;align-items:center;gap:6px}
+.toolbar .lbl{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-right:2px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg button{border:0;border-radius:0;border-left:1px solid var(--line);padding:6px 11px;background:#fff;color:var(--text-secondary);font-weight:500}
+.seg button:first-child{border-left:0}
+.seg button:hover{background:#fdfcf8;border-color:var(--line)}
+.seg button.on{background:var(--gold);color:#fff}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media(max-width:820px){.grid2{grid-template-columns:1fr}.hide-sm{display:none}}
+/* ---- dot ball chart ---- */
+.dots{display:inline-flex;gap:3px;align-items:center}
+.dots.wide{flex-wrap:wrap;gap:4px;max-width:none}
+.db{width:13px;height:13px;border-radius:50%;display:inline-block;flex:0 0 auto}
+.db.g{background:var(--good)}.db.r{background:var(--critical)}
+.db.g.q{background:#b7e0b7}.db.r.q{background:#f0b9b9}
+.db.big{width:16px;height:16px}
+.db.now{box-shadow:0 0 0 2px #fff,0 0 0 3.5px var(--gold)}
+.runlab{font-size:11px;color:var(--text-secondary);margin-left:8px;white-space:nowrap}
+.exp{cursor:pointer}
+.exp:hover td{background:#fbf9f1}
+.caret{color:var(--muted);font-size:10px;margin-right:5px;display:inline-block;width:9px}
+.detail td{background:#fcfbf7;padding:16px 14px}
+.detail h4{margin:0 0 6px;font-size:13px;font-family:'Playfair Display',serif}
+.dgrid{display:flex;flex-wrap:wrap;gap:4px;margin:8px 0 4px;max-width:760px}
+.runbar{display:flex;gap:3px;flex-wrap:wrap;margin-top:8px}
+.runchip{font-size:10.5px;padding:2px 8px;border-radius:99px;border:1px solid var(--line);background:#fff;color:var(--text-secondary)}
+.runchip.long{font-weight:600;color:#fff;border-color:transparent}
+.hl{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.hlc{border:1px solid var(--line);border-radius:7px;padding:12px 14px;background:#fff}
+.hlc.brk{border-color:#f0dfae;background:#fffdf6}
+.hlc .t{font-weight:600;font-size:13.5px;margin-bottom:2px}
+.hlc .m{font-size:12px;color:var(--text-secondary);line-height:1.5;margin-top:6px}
+.empty{font-size:12.5px;color:var(--text-secondary);padding:10px 0}
+/* ---- tabs ---- */
+.tabs{display:flex;gap:2px;flex-wrap:wrap;border-bottom:1px solid var(--line);margin:-6px 0 20px}
+.tabs button{border:0;border-radius:0;background:transparent;padding:10px 16px;font-size:13px;
+  font-weight:600;color:var(--text-secondary);border-bottom:2.5px solid transparent;margin-bottom:-1px}
+.tabs button:hover{color:var(--text-primary);background:#fdfcf8;border-color:transparent;border-bottom-color:#e3ddc7}
+.tabs button.on{color:var(--text-primary);border-bottom-color:var(--gold)}
+.tabs .cnt{font-size:10.5px;color:var(--muted);font-weight:500;margin-left:5px}
+section[data-tab]{display:none}
+section[data-tab].on{display:block}
+/* ---- percentile grid ---- */
+.pgrid{border-collapse:separate;border-spacing:2px}
+.pgrid td.pc{text-align:center;border:0;padding:0}
+.pcell{display:block;border-radius:4px;padding:7px 4px;font-size:11.5px;font-weight:600;
+  color:#14161a;min-width:56px;line-height:1.25}
+.pcell small{display:block;font-size:9.5px;font-weight:500;opacity:.72}
+.pcell.na{background:#f4f3ef;color:var(--muted);font-weight:500}
+.pcell.self{background:#eceae3;color:var(--muted);font-weight:500}
+.pcell.sig{box-shadow:inset 0 0 0 2px var(--gold)}
+.pcell.sig:after{content:'✓';display:block;font-size:9px;color:var(--gold);line-height:1}
+.hmx td.rl{white-space:nowrap;font-weight:600;font-size:11.5px;padding-right:8px}
+.hmx th.vt{height:74px;vertical-align:bottom;padding:0 0 5px}
+.hmx th.vt span{display:block;writing-mode:vertical-rl;transform:rotate(180deg);font-size:11px;font-weight:600}
+.hmx .pcell{min-width:44px;padding:8px 3px}
+.cbar{display:block;position:relative;height:4px;background:#efeee9;border-radius:2px;margin-top:4px}
+.cbar i{position:absolute;top:0;height:4px;border-radius:2px}
+.rlegend{display:flex;flex-wrap:wrap;gap:6px 20px;margin-top:12px;font-size:11.5px;color:var(--text-secondary)}
+.rlegend span{display:flex;align-items:center;gap:7px}
+.rlegend i{width:11px;height:11px;border-radius:3px;flex:none}
+.readfirst{border-left:3px solid var(--gold);background:#fdfcf8}
+ol.plain{margin:14px 0 0;padding-left:22px}
+ol.plain li{font-size:14.5px;line-height:1.65;margin-bottom:13px;padding-left:4px}
+ol.plain li::marker{color:var(--gold);font-weight:700}
+.qgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:13px;margin-top:15px}
+.qbox{border:1px solid var(--line);border-left:3px solid var(--muted);border-radius:7px;padding:13px 15px;background:#fff}
+.qbox.good{border-left-color:var(--good)} .qbox.rot{border-left-color:var(--gold)}
+.qbox.def{border-left-color:var(--sec-tech)}
+.qbox .q{font-size:11.5px;font-weight:600;color:var(--text-secondary);letter-spacing:.02em}
+.qbox .a{font-size:20px;font-weight:600;margin:7px 0 6px;line-height:1.3}
+.qbox .sup{font-size:12.5px;line-height:1.6;color:var(--text-secondary)}
+.glegend{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:10px;margin:12px 0 16px}
+.gl{border:1px solid var(--line);border-radius:7px;padding:10px 12px;background:#fff}
+.gh{font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:2px}
+.gm{margin-top:7px;display:flex;flex-wrap:wrap;gap:5px}
+.gt{font-size:11px;font-weight:600;padding:3px 7px;border-radius:4px;background:#f4f3ef;
+    color:var(--text-secondary);font-variant-numeric:tabular-nums}
+.pbar{position:relative;height:9px;border-radius:99px;background:#eceae3;overflow:hidden;min-width:110px}
+.pbar i{position:absolute;top:0;bottom:0;left:50%;border-radius:99px}
+.pbar u{position:absolute;top:-3px;bottom:-3px;width:2px;background:#14161a;opacity:.55;left:50%}
+.tagx{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.04em;padding:2px 7px;
+  border-radius:99px;text-transform:uppercase}
+.tagx.hot{background:#fdece4;color:#a8512a}.tagx.cold{background:#e6f2ff;color:#1c5aa8}
+.kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:14px 0 4px}
+.kpi div{border:1px solid var(--line);border-radius:7px;padding:11px 13px;background:#fff}
+.kpi .k{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.kpi .v{font-size:19px;font-weight:600;font-variant-numeric:tabular-nums;margin-top:3px}
+.kpi .s{font-size:11.5px;color:var(--text-secondary);margin-top:2px}
+</style>
+</head>
+<body class="viz-root">
+<div class="wrap">
+<header>
+  <div><h1>Rotation Terminal</h1>
+  <div class="sub">14 megacaps + 13 sector ETFs · catch the rotation, track how long it runs, rank how unusual it is</div></div>
+  <div><span class="sub" id="asof"></span> <button onclick="load(true)">Refresh</button></div>
+</header>
+<nav class="tabs" id="tabs"></nav>
+<div id="app"><div class="loading">Loading — daily history + 60 days of hourly bars…</div></div>
+</div>
+<script>
+const SEC={'AI / Semis':'var(--sec-semis)','Memory':'var(--sec-mem)','Big Tech':'var(--sec-tech)',
+           'Space':'var(--sec-space)','Defensive / Value':'var(--sec-def)',
+           'Index / ETF':'var(--sec-etf)','Sector ETF':'var(--sec-etf)'};
+const QC={running:'var(--good)',turning:'var(--warning)',fading:'var(--serious)',avoid:'var(--critical)',quiet:'var(--muted)'};
+const QLABEL={running:'Running',turning:'Turning up',fading:'Fading',avoid:'Avoid',quiet:'Quiet'};
+let DATA=null;                                   // last payload, for re-slicing
+const QS={bench:'SPY',tf:'d1',quad:'all'};        // quadrant view state
+function drawQuadrant(){
+  if(!DATA) return;
+  document.getElementById('qmap').innerHTML=mapChart(DATA.components,QS.bench);
+  document.getElementById('qbars').innerHTML=barChart(DATA.components,QS.bench,QS.tf,QS.quad);
+  document.querySelectorAll('#quadcard .seg button').forEach(b=>
+    b.classList.toggle('on',b.dataset.k===QS[b.dataset.dim]));
+}
+function setQ(dim,k){QS[dim]=k;drawQuadrant();}
+const pct=v=>(v>=0?'+':'')+v.toFixed(2)+'%';
+const ord=v=>{const n=Math.round(v);const s=(n%100>=10&&n%100<=20)?'th':({1:'st',2:'nd',3:'rd'}[n%10]||'th');return n+s;};
+const cls=v=>v>=0?'up':'dn';
+const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+/* Legend is only used on the Today tab, whose members are the stocks plus the
+   index ETFs — "Sector ETF" shares the grey swatch and would read as a duplicate. */
+const legend=()=>`<div class="legend">${Object.entries(SEC).filter(([k])=>k!=='Sector ETF')
+  .map(([k,v])=>`<span><i style="background:${v}"></i>${k}</span>`).join('')}</div>`;
+
+/* ---------- dot ball chart ----------
+   One dot per session: green = beat the index, red = lagged it. Pale dots are
+   days inside the +/-0.15% band — technically on that side, but not a real
+   rotation day. The last dot carries a gold ring so "today" is unmistakable. */
+const fmtDay=d=>{const [y,m,dd]=d.split('-');
+  return dd+' '+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+m-1];};
+function dots(list,{big=false,markToday=true}={}){
+  return `<span class="dots">${list.map((x,i)=>
+    `<span class="db ${x.s>0?'g':'r'}${x.quiet?' q':''}${big?' big':''}${
+      markToday&&i===list.length-1?' now':''}" title="${fmtDay(x.d)} · ${pct(x.rel)} vs index"></span>`
+    ).join('')}</span>`;}
+const runWord=d=>d>0?'outperformance':'underperformance';
+function runLabel(s){
+  if(s.broke) return `<span class="runlab"><b>broke ${s.broke_len}d ${s.broke_dir>0?'▲':'▼'}</b></span>`;
+  return `<span class="runlab">${s.streak}d ${s.streak_dir>0?'▲':'▼'}</span>`;}
+function runChips(runs){
+  return `<div class="runbar">${runs.map(r=>{
+    const long=r.len>=3, col=r.sign>0?'var(--good)':'var(--critical)';
+    return `<span class="runchip${long?' long':''}"${long?` style="background:${col}"`:''}>${
+      r.len}d ${r.sign>0?'ahead':'behind'} · ${pct(r.sum)}</span>`;}).join('')}</div>`;}
+
+function pctPanel(s){
+  const W=s.pctl.windows||{},r=s.pctl.run||{};
+  const wins=Object.keys(W);
+  if(!wins.length) return `<div class="note" style="margin-top:12px">Only ${s.n_hist} sessions of
+    history so far — percentile ranks need at least 60 windows before they mean anything, so none
+    are quoted for ${esc(s.ticker)} yet. The dots and the streak above are still real.</div>`;
+  return `<h4 style="margin:16px 0 6px">Where today sits in its own history</h4>
+    <table style="max-width:820px">
+      <tr><th>Window</th><th>Move vs index</th><th>Percentile</th><th style="text-align:left">Position in range</th>
+        <th>Green days</th><th>Best</th><th>Worst</th></tr>
+      ${wins.map(k=>{const w=W[k];
+        return `<tr><td>${w.w} day${w.w>1?'s':''}</td>
+          <td class="${cls(w.value)}"><b>${pct(w.value)}</b></td>
+          <td><span class="pcell" style="background:${pctColor(w.pct)}">${ord(w.pct)}</span></td>
+          <td style="text-align:left"><span class="pbar" style="display:inline-block">
+            <i style="background:${w.pct>=50?'var(--good)':'var(--critical)'};${w.pct>=50
+              ?`left:50%;width:${((w.pct-50)/100*110).toFixed(1)}px`
+              :`right:50%;left:auto;width:${((50-w.pct)/100*110).toFixed(1)}px`}"></i><u></u></span></td>
+          <td>${w.green}/${w.w}</td>
+          <td class="up">${pct(w.best)}</td><td class="dn">${pct(w.worst)}</td></tr>`;}).join('')}
+      ${r.pct==null?'':`<tr style="background:#fdf8e8"><td><b>Current run</b></td>
+        <td>${r.len} day${r.len===1?'':'s'} ${r.dir>0?'ahead':'behind'}</td>
+        <td><span class="pcell" style="background:${pctColor(r.dir>0?r.pct:100-r.pct)}">${ord(r.pct)}</span></td>
+        <td style="text-align:left" class="why">longer than ${r.pct}% of its past ${r.dir>0?'green':'red'} runs</td>
+        <td colspan="3" class="why" style="text-align:left">longest ever ${r.longest} days · ${r.n} past runs</td></tr>`}
+    </table>
+    <div class="note" style="margin-top:10px">${s.pct_read}</div>`;
+}
+
+function stockDetail(s,rs,idp){
+  idp=idp||'';
+  const k=String(Math.min(Math.max(s.streak,1),6));
+  const st=rs[k]||{};
+  const reds=s.dots.filter(x=>x.s<0).length;
+  return `<tr class="detail" data-det="${idp}${s.ticker}" style="display:none"><td colspan="8">
+    <h4>${esc(s.name)} — last ${s.dots.length} sessions versus the index</h4>
+    <div class="dgrid">${dots(s.dots,{big:true}).replace('class="dots"','class="dots wide"')}</div>
+    <div class="hint" style="margin:2px 0 0">${fmtDay(s.dots[0].d)} → ${fmtDay(s.dots[s.dots.length-1].d)}
+      · ${s.green30} green, ${reds} red · longest run behind: <b>${s.longest_red30}d</b>,
+      longest run ahead: <b>${s.longest_green30}d</b></div>
+    ${runChips(s.runs)}
+    <div class="note" style="margin-top:12px">${esc(s.pattern)}</div>
+    ${pctPanel(s)}
+    <table style="margin-top:12px;max-width:760px">
+      <tr><th>Run length</th><th>Times seen</th><th>Ran another day</th><th>Flipped</th>
+          <th>Breaks seen</th><th>3 days after a break</th><th>Went the new way</th></tr>
+      ${[1,2,3,4,5,6].map(i=>{const v=rs[String(i)]||{};
+        const here=i===Math.min(Math.max(s.streak,1),6);
+        const hereB=s.broke&&i===Math.min(s.broke_len,6);
+        return `<tr${here||hereB?' style="background:#fdf8e8"':''}>
+        <td>${i===6?'6+':i} day${i>1?'s':''}${here?' &nbsp;<b>← now</b>':''}${hereB?' &nbsp;<b>← broke</b>':''}</td>
+        <td>${(v.n||0).toLocaleString()}</td><td>${v.continue_pct}%</td><td>${v.reverse_pct}%</td>
+        <td>${(v.n_break||0).toLocaleString()}</td>
+        <td class="${cls(v.after_break_fwd3||0)}">${pct(v.after_break_fwd3||0)}</td>
+        <td>${v.after_break_hit}%</td></tr>`;}).join('')}
+    </table>
+    <div class="hint" style="margin:10px 0 0">"Ran another day" is measured across every name in this set
+      that has a full two years of history. Anything within a few points of 50% is a coin flip — only the longer runs carry a real edge,
+      and those have the smallest samples. Use the dots to see the rotation; use this table to size how
+      much to trust it.</div>
+  </td></tr>`;}
+
+function toggleDet(tk){
+  const row=document.querySelector(`tr[data-det="${tk}"]`);
+  const head=document.querySelector(`tr[data-row="${tk}"]`);
+  if(!row) return;
+  const open=row.style.display!=='none';
+  row.style.display=open?'none':'table-row';
+  head.querySelector('.caret').textContent=open?'▸':'▾';
+}
+
+function streakBoard(sb,live,kind){
+  const noun=kind==='sector'?'sector':'name';
+  const b=sb.breaks, s=sb.stretched;
+  let h=`<div class="card"><div class="step">Highlight of the day</div>
+    <h2>${kind==='sector'?'Sector streaks':'Streaks'} that snapped, ${kind==='sector'?'sectors':'streaks'} that are stretched</h2>
+    <p class="hint">A run of red dots is money leaving a ${noun} day after day. The trade is not the run — it is
+      the day the run breaks. Anything that snapped a streak of two sessions or more shows up here first.</p>
+    ${live?`<div class="live"><b>Today's dot is provisional.</b> The session is still open, so the last dot
+      can still change colour before the close — a break shown now is not confirmed until the bell. Every
+      earlier dot is a settled close and will not move.</div>`:''}`;
+  h+=`<h4 style="font-size:12.5px;margin:14px 0 8px;text-transform:uppercase;letter-spacing:.06em;color:var(--gold)">Broke a streak today</h4>`;
+  h+= b.length?`<div class="hl">${b.map(x=>`<div class="hlc brk">
+      <div class="t"><span class="dot" style="background:${SEC[x.sector]}"></span>${esc(x.name)} <span class="tk">${esc(x.ticker)}</span></div>
+      ${dots(x.dots5,{big:true})}
+      <div class="m"><b>Snapped a ${x.len}-day ${runWord(x.dir)} run</b> — today it went the other way
+      (${pct(x.rel_today)} vs the index).<br>Across ${x.n} past breaks of this length, the next 3 sessions
+      followed the flip ${x.hit}% of the time, averaging <b class="${cls(x.fwd3)}">${pct(x.fwd3)}</b>.</div>
+    </div>`).join('')}</div>`:`<div class="empty">No streak of two days or more broke today.</div>`;
+  h+=`<h4 style="font-size:12.5px;margin:18px 0 8px;text-transform:uppercase;letter-spacing:.06em;color:var(--gold)">Running long — watch for the break</h4>`;
+  h+= s.length?`<div class="hl">${s.map(x=>`<div class="hlc">
+      <div class="t"><span class="dot" style="background:${SEC[x.sector]}"></span>${esc(x.name)} <span class="tk">${esc(x.ticker)}</span></div>
+      ${dots(x.dots5,{big:true})}
+      <div class="m"><b>${x.len} days of ${runWord(x.dir)} in a row.</b> Runs that reach ${Math.min(x.len,6)} days
+      have added another only ${x.continue_pct}% of the time (${x.n} cases) — a ${x.reverse_pct}% chance the
+      flip is tomorrow.</div>
+    </div>`).join('')}</div>`:`<div class="empty">Nothing is three days or more into a run right now.</div>`;
+  h+=`<div class="note">Read it honestly: at the single-${noun} level most run lengths flip about half the
+    time, so a long run is a <b>warning that the move is late</b>, not a signal on its own. The break itself,
+    confirmed by the next day's dot, is the part with a usable edge — and only where the sample is large.</div></div>`;
+  return h;}
+
+/* ---------- intraday: today's path vs the index ----------
+   A stock is FLAGGED on its own RAW move (vs yesterday's close, not vs index)
+   when it swings from - to + (or + to -) BY 2% OR MORE — i.e. it crosses its
+   previous close AND the full negative-to-positive amplitude is >= 2%. Both
+   conditions must hold. Flagged names are drawn bold; everything else dimmed. */
+const FLAG_SWING=2.0;   // min - to + amplitude (%) for a flagged crossing
+function intraFlags(p){
+  const raw=p.pts.map(x=>x.raw);
+  const mn=Math.min(...raw), mx=Math.max(...raw);
+  const flip=mn<0 && mx>0;               // spent time on both sides of prev close
+  const range=mx-mn;                     // full - to + amplitude across the day
+  const big=range>=FLAG_SWING;
+  return {flip,big,range,mn,mx,hot:flip&&big};   // crossing AND >= 2% swing
+}
+function intraChart(m){
+  if(!m||!m.paths.length) return '<p class="hint">No intraday bars yet for this session.</p>';
+  const W=1400,H=680,pl=58,pr=168,pt=24,pb=46;
+  const all=m.paths.flatMap(p=>p.pts.map(x=>x.rel));
+  const lim=Math.max(0.4,Math.max(...all.map(Math.abs))*1.15);
+  // x is real clock time, not bar index — tickers can carry a different number
+  // of bars mid-session, and index-based x would misplace them on the day.
+  const ts=m.paths.flatMap(p=>p.pts.map(x=>x.ts));
+  const t0=Math.min(...ts),t1=Math.max(...ts);
+  const sx=t=>pl+(t1===t0?0:((t-t0)/(t1-t0))*(W-pl-pr));
+  const sy=v=>pt+((lim-v)/(2*lim))*(H-pt-pb);
+  const F={}; let anyHot=false;
+  m.paths.forEach(p=>{const f=intraFlags(p); F[p.ticker]=f; if(f.hot) anyHot=true;});
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Intraday performance versus the index">`;
+  [lim,lim/2,0,-lim/2,-lim].forEach(g=>{
+    s+=`<line x1="${pl}" y1="${sy(g)}" x2="${W-pr}" y2="${sy(g)}" stroke="${g===0?'#c9c5bb':'#f2f0ea'}"${g===0?' stroke-width="1.5"':''}/>
+        <text x="${pl-8}" y="${sy(g)+4}" font-size="11" fill="var(--text-secondary)" text-anchor="end">${g>=0?'+':''}${g.toFixed(1)}%</text>`;
+  });
+  const lab=m.paths.reduce((a,b)=>b.pts.length>a.pts.length?b:a).pts;
+  const ticks=lab.filter((p,i)=>i===lab.length-1||lab.slice(i+1).every(q=>q.ts-p.ts>1200));
+  ticks.forEach(p=>s+=`<text x="${sx(p.ts)}" y="${H-16}" font-size="11" fill="var(--text-secondary)" text-anchor="middle">${p.hhmm}</text>`);
+  m.paths.forEach(p=>{
+    const f=F[p.ticker], dim=anyHot&&!f.hot;
+    const pts=p.pts.map(x=>`${sx(x.ts).toFixed(1)},${sy(x.rel).toFixed(1)}`).join(' ');
+    if(f.hot)   // soft glow underlay so the flagged line reads first
+      s+=`<polyline points="${pts}" fill="none" stroke="${SEC[p.sector]}" stroke-width="7.5" stroke-linejoin="round" stroke-linecap="round" opacity="0.15"/>`;
+    s+=`<polyline points="${pts}" fill="none" stroke="${SEC[p.sector]}" stroke-width="${f.hot?3.6:2.1}" stroke-linejoin="round" opacity="${dim?0.62:1}"><title>${esc(p.name)} — ${pct(p.raw_last)} on the day (${pct(p.last)} vs index)${f.hot?` · FLAGGED${f.flip?' · crossed prev close':''}${f.big?` · ${f.range.toFixed(1)}% swing`:''}`:''}</title></polyline>`;
+    if(f.hot){ // ring the bar where the stock's RAW move crosses its prev close
+      for(let i=1;i<p.pts.length;i++){const a=p.pts[i-1],b=p.pts[i];
+        if((a.raw<0)!==(b.raw<0)&&a.raw!==b.raw)
+          s+=`<circle cx="${sx(b.ts).toFixed(1)}" cy="${sy(b.rel).toFixed(1)}" r="4" fill="var(--surface-1)" stroke="${SEC[p.sector]}" stroke-width="2"><title>${esc(p.ticker)} crossed its prev close at ${b.hhmm}</title></circle>`;}
+    }
+  });
+  // End labels: nudge apart so tightly-bunched names stay readable, and draw a
+  // leader line back to the true endpoint so the nudge never misleads.
+  const GAP=16.5;
+  const lbl=m.paths.map(p=>({p,f:F[p.ticker],x:sx(p.pts[p.pts.length-1].ts),y0:sy(p.pts[p.pts.length-1].rel)}))
+                   .sort((a,b)=>a.y0-b.y0);
+  lbl.forEach((L,i)=>{ L.y=i?Math.max(L.y0,lbl[i-1].y+GAP):L.y0; });
+  const over=lbl.length?lbl[lbl.length-1].y-(H-pb):0;
+  if(over>0) lbl.forEach(L=>L.y-=over);
+  lbl.forEach(L=>{
+    const hot=L.f.hot;
+    s+=`<circle cx="${L.x}" cy="${L.y0}" r="${hot?4.5:3.5}" fill="${SEC[L.p.sector]}" stroke="var(--surface-1)" stroke-width="1.5"/>`;
+    if(Math.abs(L.y-L.y0)>1.5)
+      s+=`<line x1="${L.x+4}" y1="${L.y0}" x2="${L.x+8}" y2="${L.y}" stroke="${SEC[L.p.sector]}" stroke-width="1" opacity="0.5"/>`;
+    const badge=hot?` <tspan fill="${SEC[L.p.sector]}" font-size="10">${L.f.flip?'⇄':'↕'}${L.f.big?L.f.range.toFixed(1)+'%':''}</tspan>`:'';
+    s+=`<text x="${L.x+11}" y="${L.y+4}" font-size="${hot?11.5:11}" font-weight="${hot?700:600}" fill="${hot?'var(--text-primary)':SEC[L.p.sector]}" opacity="${anyHot&&!hot?0.85:1}">${esc(L.p.ticker)} <tspan fill="var(--text-primary)" opacity="0.75">${pct(L.p.last)}</tspan>${badge}</text>`;
+  });
+  return s+`</svg>`;
+}
+/* caption under the chart: names the flagged stocks and why they lit up */
+function intraFlagCaption(m){
+  if(!m||!m.paths.length) return '';
+  const hot=m.paths.map(p=>({p,f:intraFlags(p)})).filter(x=>x.f.hot)
+    .sort((a,b)=>b.f.range-a.f.range);
+  if(!hot.length)
+    return `<div class="settled" style="margin-top:12px">No stock crossed its prev close or swung ${FLAG_SWING}%+ intraday yet — nothing flagged this session.</div>`;
+  const items=hot.map(({p,f})=>{
+    const dir=p.raw_last>=0?'red → green':'green → red';
+    const why=`${dir} · ${f.range.toFixed(1)}% swing`;
+    return `<span style="display:inline-flex;align-items:center;gap:5px;margin:2px 12px 2px 0">
+      <i style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${SEC[p.sector]}"></i>
+      <b>${esc(p.ticker)}</b> ${pct(p.raw_last)} on day <span style="color:var(--text-secondary)">(${why})</span></span>`;
+  }).join('');
+  return `<div class="live" style="margin-top:12px"><b>Flagged this session</b> — big raw intraday moves (emailed too):<br>${items}</div>`;
+}
+
+/* ---------- rotation map (the quadrant framework), dots by sector ----------
+   Reads each component's yesterday/today move versus the CHOSEN benchmark, so
+   the same chart works vs SPY or vs QQQ. Against its own benchmark a component
+   sits at the origin (0,0) — the honest baseline. */
+function mapChart(comps,bench){
+  const bn=bench==='QQQ'?'QQQ':'the index';
+  const W=1080,H=500,p=62;
+  const v=comps.flatMap(d=>[Math.abs(d.vs[bench].yday),Math.abs(d.vs[bench].d1)]);
+  const m=Math.max(1.2,Math.ceil(Math.max(...v)*1.25*10)/10);
+  const sx=x=>p+((x+m)/(2*m))*(W-2*p), sy=y=>H-p-((y+m)/(2*m))*(H-2*p);
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Rotation map">`;
+  s+=`<rect x="${sx(0)}" y="${p}" width="${W-p-sx(0)}" height="${sy(0)-p}" fill="#0ca30c" opacity="0.045"/>
+      <rect x="${p}" y="${p}" width="${sx(0)-p}" height="${sy(0)-p}" fill="#fab219" opacity="0.07"/>
+      <rect x="${sx(0)}" y="${sy(0)}" width="${W-p-sx(0)}" height="${H-p-sy(0)}" fill="#ec835a" opacity="0.055"/>
+      <rect x="${p}" y="${sy(0)}" width="${sx(0)-p}" height="${H-p-sy(0)}" fill="#d03b3b" opacity="0.045"/>
+      <line x1="${p}" y1="${sy(0)}" x2="${W-p}" y2="${sy(0)}" stroke="#d9d5cb"/>
+      <line x1="${sx(0)}" y1="${p}" x2="${sx(0)}" y2="${H-p}" stroke="#d9d5cb"/>`;
+  [[sx(0)+14,p+22,'start','RUNNING — still being bought','#0a7d0a'],
+   [sx(0)-14,p+22,'end','TURNING UP — the fresh move','#8a6a00'],
+   [sx(0)+14,H-p-14,'start','FADING — being sold into','#a8512a'],
+   [sx(0)-14,H-p-14,'end','AVOID — money leaving','#b8302f']]
+   .forEach(([x,y,a,t,c])=>s+=`<text x="${x}" y="${y}" font-size="11.5" font-weight="600" fill="${c}" text-anchor="${a}">${t}</text>`);
+  s+=`<text x="${W/2}" y="${H-16}" font-size="11.5" fill="var(--text-secondary)" text-anchor="middle">Yesterday vs ${bn} (%)  →</text>
+      <text x="17" y="${H/2}" font-size="11.5" fill="var(--text-secondary)" text-anchor="middle" transform="rotate(-90 17 ${H/2})">Today vs ${bn} (%)  →</text>`;
+  comps.forEach(d=>{
+    const q=d.vs[bench],x=sx(q.yday),y=sy(q.d1);
+    const r=d.is_etf?10.5:8.5, sw=d.is_etf?2.5:2;
+    // ETFs drawn as a diamond so the index members read distinctly from stocks
+    const shape=d.is_etf
+      ? `<rect x="${(x-r).toFixed(1)}" y="${(y-r).toFixed(1)}" width="${(r*2).toFixed(1)}" height="${(r*2).toFixed(1)}" transform="rotate(45 ${x.toFixed(1)} ${y.toFixed(1)})" fill="${SEC[d.sector]}" stroke="var(--surface-1)" stroke-width="${sw}">`
+      : `<circle cx="${x}" cy="${y}" r="${r}" fill="${SEC[d.sector]}" stroke="var(--surface-1)" stroke-width="${sw}">`;
+    s+=`${shape}<title>${esc(d.name)} (${esc(d.ticker)}) · ${esc(d.sector)}&#10;Yesterday ${pct(q.yday)} vs ${bn}&#10;Today ${pct(q.d1)} vs ${bn}&#10;${esc(q.call)} · day ${q.streak} of the run</title></${d.is_etf?'rect':'circle'}>
+        <text x="${x+r+4}" y="${y+4}" font-size="11.5" font-weight="${d.is_etf?700:600}" fill="var(--text-primary)">${esc(d.ticker)}</text>`;
+  });
+  return s+`</svg>`;
+}
+
+/* ---------- horizontal diverging bars, one filterable view ----------
+   Ranks every component by its relative move over the chosen window, versus the
+   chosen benchmark, optionally narrowed to a single quadrant call. Centre line
+   is the benchmark; right of it is outperformance, left is underperformance. */
+const TFLABEL={d1:'today',d5:'past 5 days',d30:'past 30 days'};
+function barChart(comps,bench,tf,quad){
+  const bn=bench==='QQQ'?'QQQ':'the index';
+  let rows=comps.map(d=>({d,val:d.vs[bench][tf],q:d.vs[bench].quad,call:d.vs[bench].call}));
+  if(quad!=='all') rows=rows.filter(r=>r.q===quad);
+  rows.sort((a,b)=>b.val-a.val);
+  if(!rows.length) return `<p class="hint">No components are in the <b>${esc(QLABEL[quad]||quad)}</b> quadrant versus ${bn} right now.</p>`;
+  const W=1080,rowH=30,pt=10,pb=26,lab=118;
+  const H=pt+pb+rows.length*rowH;
+  const m=Math.max(0.5,Math.max(...rows.map(r=>Math.abs(r.val)))*1.12);
+  const cx=lab+((W-lab-70)/2), half=(W-lab-70)/2;
+  const sx=v=>cx+(v/m)*half;
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Relative performance bars">`;
+  [-m,-m/2,0,m/2,m].forEach(g=>{
+    s+=`<line x1="${sx(g).toFixed(1)}" y1="${pt}" x2="${sx(g).toFixed(1)}" y2="${H-pb}" stroke="${g===0?'#c9c5bb':'#f2f0ea'}"${g===0?'':' stroke-dasharray="2 3"'}/>
+        <text x="${sx(g).toFixed(1)}" y="${H-9}" font-size="10" fill="var(--text-secondary)" text-anchor="middle">${g>=0?'+':''}${g.toFixed(1)}%</text>`;
+  });
+  rows.forEach((r,i)=>{
+    const y=pt+i*rowH+rowH/2, x0=sx(0), x1=sx(r.val);
+    const up=r.val>=0, bw=Math.max(1,Math.abs(x1-x0));
+    s+=`<rect x="${(up?x0:x1).toFixed(1)}" y="${(y-8).toFixed(1)}" width="${bw.toFixed(1)}" height="16" rx="3" fill="${SEC[r.d.sector]}" opacity="${up?0.92:0.6}"><title>${esc(r.d.name)} — ${pct(r.val)} vs ${bn} (${TFLABEL[tf]}) · ${esc(r.call)}</title></rect>
+        <text x="${lab-8}" y="${(y+4).toFixed(1)}" font-size="11.5" font-weight="600" fill="var(--text-primary)" text-anchor="end">${esc(r.d.ticker)}${r.d.is_etf?' ◆':''}</text>
+        <text x="${(up?x1+6:x1-6).toFixed(1)}" y="${(y+4).toFixed(1)}" font-size="11" fill="${up?'#0a7d0a':'#b8302f'}" text-anchor="${up?'start':'end'}">${pct(r.val)}</text>`;
+  });
+  return s+`</svg>`;
+}
+
+/* ---------- small line: rolling correlation to semis ---------- */
+function corrSpark(h){
+  if(!h||h.length<4) return '';
+  const W=104,H=26;
+  const sy=v=>2+((1-v)/2)*(H-4);
+  const pts=h.map((v,i)=>`${(i/(h.length-1)*W).toFixed(1)},${sy(v).toFixed(1)}`).join(' ');
+  const last=h[h.length-1];
+  return `<svg width="${W}" height="${H}" aria-hidden="true">
+    <line x1="0" y1="${sy(0)}" x2="${W}" y2="${sy(0)}" stroke="#ddd9cf" stroke-dasharray="2 2"/>
+    <polyline points="${pts}" fill="none" stroke="${last>=0?'var(--sec-semis)':'var(--sec-tech)'}" stroke-width="2" stroke-linejoin="round"/></svg>`;
+}
+
+function spark(t,c){
+  const W=86,H=24,lo=Math.min(...t),hi=Math.max(...t),r=(hi-lo)||1;
+  const pts=t.map((v,i)=>`${(i/(t.length-1)*W).toFixed(1)},${(H-2-((v-lo)/r)*(H-4)).toFixed(1)}`).join(' ');
+  return `<svg width="${W}" height="${H}" aria-hidden="true"><polyline points="${pts}" fill="none" stroke="${c}" stroke-width="2" stroke-linejoin="round"/></svg>`;
+}
+
+/* =================== PERCENTILE SYSTEM (front end) ===================
+   A streak says HOW LONG. A percentile says HOW UNUSUAL. Every cell below is a
+   rank of today's rolling relative move against that same name's own history —
+   so "5/5 green" only earns attention when the rank next to it is extreme. */
+const PS={win:'5',bt_uni:'stocks',bt_win:'5',bt_hor:'5',grid_uni:'all'};
+function setP(dim,k){PS[dim]=k;drawPct();}
+function pctColor(p){
+  if(p==null) return '#f4f3ef';
+  const t=(p-50)/50, a=Math.min(.62,Math.abs(t)*.62+.05);
+  return t>=0?`rgba(12,163,12,${a.toFixed(3)})`:`rgba(208,59,59,${a.toFixed(3)})`;
+}
+function pctCell(w){
+  if(!w||w.pct==null) return `<td class="pc"><span class="pcell na">—</span></td>`;
+  return `<td class="pc"><span class="pcell" style="background:${pctColor(w.pct)}"
+    title="${w.w}-day relative move ${pct(w.value)} · ranks ${w.pct}th of ${w.n} windows · ${w.green}/${w.w} green">
+    ${w.pct.toFixed(0)}<small>${pct(w.value)}</small></span></td>`;
+}
+function pctEntities(){
+  const s=DATA.stocks||[], e=DATA.sector_etfs||[];
+  return PS.grid_uni==='stocks'?s:PS.grid_uni==='sectors'?e:s.concat(e);
+}
+function pctGrid(){
+  const wins=DATA.pct_windows.map(String);
+  let rows=pctEntities().slice();
+  const key=x=>{const w=(x.pctl.windows||{})[PS.win];return w&&w.pct!=null?w.pct:-1;};
+  rows.sort((a,b)=>key(b)-key(a));
+  return `<div class="scroll"><table class="pgrid">
+    <tr><th>Name</th>${wins.map(w=>`<th style="text-align:center">${w}d</th>`).join('')}
+      <th style="text-align:center">Run</th><th style="text-align:left">Last 5</th>
+      <th style="text-align:left">Where it sits</th></tr>
+    ${rows.map(x=>{
+      const W=x.pctl.windows||{},r=x.pctl.run||{};
+      const sel=W[PS.win];
+      return `<tr><td style="white-space:nowrap"><span class="dot" style="background:${SEC[x.sector]||'var(--sec-etf)'}"></span>
+        <span class="nm">${esc(x.name)}</span><span class="tk">${esc(x.ticker)}</span>
+        ${x.short_hist?`<span class="tk" title="Only ${x.n_hist} sessions of history — ranks use what exists">· ${x.n_hist}d hist</span>`:''}</td>
+      ${wins.map(w=>pctCell(W[w])).join('')}
+      <td class="pc">${r.pct==null?'<span class="pcell na">—</span>':
+        `<span class="pcell" style="background:${pctColor(r.dir>0?r.pct:100-r.pct)}"
+          title="${r.len}-day ${r.dir>0?'green':'red'} run · longer than ${r.pct}% of its past runs the same way (longest ${r.longest})">
+          ${r.len}d ${r.dir>0?'▲':'▼'}<small>${ord(r.pct)}</small></span>`}</td>
+      <td style="text-align:left;white-space:nowrap">${dots(x.dots5,{big:true})}</td>
+      <td style="text-align:left" class="why">${sel&&sel.pct!=null?bandWord(sel.pct):'building history'}</td></tr>`;}).join('')}
+  </table></div>`;
+}
+const bandWord=p=>p>=90?'<b style="color:#a8512a">Stretched — top decile</b>'
+  :p>=75?'Strong, not extreme':p>=25?'Middle of its own range'
+  :p>10?'Weak, not extreme':'<b style="color:#1c5aa8">Washed out — bottom decile</b>';
+
+function pctCards(list,kind){
+  if(!list.length) return `<div class="empty">Nothing in the ${kind==='hot'?'top':'bottom'} decile today.</div>`;
+  return `<div class="hl">${list.map(c=>`<div class="hlc${kind==='hot'?' brk':''}">
+    <div class="t"><span class="dot" style="background:${SEC[c.sector]||'var(--sec-etf)'}"></span>${esc(c.name)}
+      <span class="tk">${esc(c.ticker)}</span>
+      <span class="tagx ${kind}" style="float:right">${ord(c.pct)} pct</span></div>
+    ${dots(c.dots5,{big:true})}
+    <div class="m">${c.read}</div></div>`).join('')}</div>`;
+}
+
+/* Percentile-conditioned forward returns. EDGE, not raw return: this universe
+   drifts against the index, and a raw bar would show that drift rather than the
+   percentile's own information. */
+function pctBtChart(){
+  const blk=((DATA.pct_backtest[PS.bt_uni]||{})[PS.bt_win]||{})[PS.bt_hor];
+  if(!blk) return '<p class="hint">No backtest for that combination.</p>';
+  const b=blk.buckets,W=1080,rowH=44,pt=14,pb=30,lab=132,H=pt+pb+b.length*rowH;
+  const m=Math.max(.2,Math.max(...b.map(x=>Math.abs(x.edge)))*1.2);
+  const cx=lab+((W-lab-90)/2),half=(W-lab-90)/2,sx=v=>cx+(v/m)*half;
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Forward return by percentile bucket">`;
+  [-m,-m/2,0,m/2,m].forEach(g=>{
+    s+=`<line x1="${sx(g).toFixed(1)}" y1="${pt}" x2="${sx(g).toFixed(1)}" y2="${H-pb}" stroke="${g===0?'#c9c5bb':'#f2f0ea'}"${g===0?'':' stroke-dasharray="2 3"'}/>
+      <text x="${sx(g).toFixed(1)}" y="${H-10}" font-size="10" fill="var(--text-secondary)" text-anchor="middle">${g>=0?'+':''}${g.toFixed(2)}%</text>`;});
+  b.forEach((x,i)=>{
+    const y=pt+i*rowH+rowH/2,x0=sx(0),x1=sx(x.edge),up=x.edge>=0;
+    const col=up?'#0ca30c':'#d03b3b';
+    s+=`<rect x="${(up?x0:x1).toFixed(1)}" y="${(y-11).toFixed(1)}" width="${Math.max(1,Math.abs(x1-x0)).toFixed(1)}" height="22" rx="3" fill="${col}" opacity="${x.lo>=90||x.hi<=10?0.95:0.55}">
+      <title>${x.lo}–${x.hi}th percentile · ${x.n.toLocaleString()} cases · raw ${pct(x.fwd)} over the next ${PS.bt_hor} sessions, ${pct(x.edge)} versus baseline · positive ${x.hit}% of the time</title></rect>
+      <text x="${lab-10}" y="${(y-1).toFixed(1)}" font-size="11.5" font-weight="600" text-anchor="end" fill="var(--text-primary)">${x.lo}–${x.hi}th pct</text>
+      <text x="${lab-10}" y="${(y+12).toFixed(1)}" font-size="10" text-anchor="end" fill="var(--muted)">${x.n.toLocaleString()} cases</text>
+      <text x="${(up?x1+7:x1-7).toFixed(1)}" y="${(y+4).toFixed(1)}" font-size="11.5" font-weight="600" text-anchor="${up?'start':'end'}" fill="${up?'#0a7d0a':'#b8302f'}">${pct(x.edge)} <tspan font-weight="400" fill="var(--text-secondary)">· ${x.hit}% up</tspan></text>`;});
+  return s+'</svg>';
+}
+function drawPct(){
+  if(!DATA) return;
+  const g=document.getElementById('pgridbox');   if(g) g.innerHTML=pctGrid();
+  const c=document.getElementById('pbtbox');     if(c) c.innerHTML=pctBtChart();
+  const v=document.getElementById('pbtverdict');
+  if(v){const blk=((DATA.pct_backtest[PS.bt_uni]||{})[PS.bt_win]||{})[PS.bt_hor];
+    v.innerHTML=blk?`Baseline drift for this set is <b>${pct(blk.base)}</b> over ${PS.bt_hor} sessions (up ${blk.base_hit}% of the time); every bar above is measured against that.`:'';}
+  document.querySelectorAll('.pseg button').forEach(b=>
+    b.classList.toggle('on',b.dataset.k===PS[b.dataset.dim]));
+}
+
+/* summary badge: majority colour + green-count/total, for a run of dots */
+function scoreBadge(list){
+  const g=list.filter(x=>x.s>0).length, n=list.length;
+  const maj=g>=n-g;
+  const col=maj?'var(--good)':'var(--critical)';
+  return `<span class="pill" style="background:${col}" title="${g} up / ${n-g} down vs index">${g}/${n}</span>`;
+}
+const MAIN_DOTS=10;   // sessions shown inline in the main table (detail row still shows all 30)
+
+/* generic entity table — same shape for stocks and sector ETFs */
+function entityTable(list,rs,idp){
+  return `<div class="scroll"><table>
+    <tr><th>Name</th><th>Price</th><th>Today</th><th>Today<br>vs index</th>
+        <th style="text-align:left">Last ${MAIN_DOTS} sessions</th><th title="Rank of the 5-day relative move against this name's own history">5d pct</th>
+        <th class="hide-sm" title="Green/red sessions vs index, last 7 trading days">7d score</th>
+        <th class="hide-sm" title="Green/red sessions vs index, last 30 trading days">30d score</th></tr>
+    ${list.map(s=>{const w=(s.pctl.windows||{})['5'];
+      const last=s.dots.slice(-MAIN_DOTS), last7=s.dots.slice(-7);
+      return `<tr class="exp" data-row="${idp}${s.ticker}" onclick="toggleDet('${idp}${s.ticker}')">
+      <td style="white-space:nowrap"><span class="caret">▸</span><span class="dot" style="background:${SEC[s.sector]||'var(--sec-etf)'}"></span><span class="nm">${esc(s.name)}</span><span class="tk">${esc(s.ticker)}</span></td>
+      <td>${s.price.toFixed(2)}</td>
+      <td class="${cls(s.today)}">${pct(s.today)}</td>
+      <td class="${cls(s.rel_today)}"><b>${pct(s.rel_today)}</b></td>
+      <td style="text-align:left;white-space:nowrap">${dots(last,{big:true})}${runLabel(s)}</td>
+      <td>${w&&w.pct!=null?`<span class="pcell" style="background:${pctColor(w.pct)}">${w.pct.toFixed(0)}</span>`
+          :`<span class="pcell na" title="only ${s.n_hist} sessions of history">—</span>`}</td>
+      <td class="hide-sm">${scoreBadge(last7)}</td>
+      <td class="hide-sm">${scoreBadge(s.dots)}</td></tr>
+      ${stockDetail(s,rs,idp)}`;}).join('')}
+    </table></div>`;
+}
+
+/* ================= HOURLY PATTERNS =================
+   Same hourly bars as Step 1, read across every stored session. Three separate
+   questions, kept separate because they have different answers: which names
+   move together, whether anything repeats at a fixed hour, and who goes the
+   other way when the rest of the board moves. Everything is available at two
+   levels — single stocks, and the five groups. */
+
+const PAT={lvl:'stocks'};
+function setPat(k){PAT.lvl=k;drawPatterns();}
+
+const heat=(v,lim)=>{
+  if(v==null) return '#f4f3ef';
+  const a=Math.min(.66,Math.abs(v)/lim*.66);
+  return v>=0?`rgba(12,163,12,${a.toFixed(3)})`:`rgba(208,59,59,${a.toFixed(3)})`;
+};
+const corrHeat=r=>{
+  if(r==null) return '#f4f3ef';
+  const a=Math.min(.7,Math.abs(r)*.8);
+  return r>=0?`rgba(12,163,12,${a.toFixed(3)})`:`rgba(208,59,59,${a.toFixed(3)})`;
+};
+const SECTOR_ORDER_UI=['AI / Semis','Memory','Big Tech','Space','Defensive / Value'];
+const SECTOR_RANK=s=>{const i=SECTOR_ORDER_UI.indexOf(s);return i<0?99:i;};
+const shortKey=k=>k.length>12?k.replace(' / ','/'):k;
+
+/* ---- pair matrix ---- */
+/* Which stocks sit in each group. The group panels are averages of these
+   names, so the membership has to be on screen wherever a group is named. */
+function groupLegend(members){
+  if(!members) return '';
+  return `<div class="glegend">${Object.entries(members).map(([g,list])=>
+    `<div class="gl"><div class="gh"><span class="dot" style="background:${SEC[g]||'var(--sec-etf)'}"></span>${esc(g)}
+       <span class="tk">${list.length} name${list.length===1?'':'s'}</span></div>
+     <div class="gm">${list.map(x=>`<span class="gt" title="${esc(x.name)}">${esc(x.ticker)}</span>`).join('')}</div></div>`
+  ).join('')}</div>`;
+}
+
+function pairMatrix(keys,secOf,pairs){
+  const M={}; pairs.forEach(p=>{M[p.a+'|'+p.b]=p; M[p.b+'|'+p.a]=p;});
+  return `<div class="scroll"><table class="pgrid hmx">
+    <tr><th></th>${keys.map(t=>`<th class="vt"><span>${esc(shortKey(t))}</span></th>`).join('')}</tr>
+    ${keys.map(a=>`<tr>
+      <td class="rl"><span class="dot" style="background:${SEC[secOf(a)]||'var(--sec-etf)'}"></span>${esc(shortKey(a))}</td>
+      ${keys.map(b=>{
+        if(a===b) return `<td class="pc"><span class="pcell self">—</span></td>`;
+        const p=M[a+'|'+b];
+        if(!p) return `<td class="pc"><span class="pcell na">·</span></td>`;
+        return `<td class="pc"><span class="pcell" style="background:${corrHeat(p.corr)}"
+          title="${esc(a)} vs ${esc(b)} — hourly moves vs the index over ${p.n} hours: correlation ${p.corr.toFixed(2)}, same direction ${p.same_dir}% of hours">
+          ${p.corr.toFixed(2)}</span></td>`;}).join('')}
+    </tr>`).join('')}
+  </table></div>`;
+}
+
+function pairRows(list,dir,isGroup){
+  if(!list.length) return `<div class="empty">Not enough overlapping hours yet.</div>`;
+  return `<div class="scroll"><table>
+    <tr><th>Pair</th><th>Correlation</th><th>Same direction</th><th>Hours</th><th style="text-align:left">Read</th></tr>
+    ${list.map(p=>`<tr>
+      <td style="white-space:nowrap"><span class="dot" style="background:${SEC[p.sector_a]||'var(--sec-etf)'}"></span><b>${esc(p.a)}</b>
+        <span class="tk">${dir>0?'with':'against'}</span>
+        <span class="dot" style="background:${SEC[p.sector_b]||'var(--sec-etf)'}"></span><b>${esc(p.b)}</b></td>
+      <td class="${p.corr>=0?'up':'dn'}">${p.corr.toFixed(2)}</td>
+      <td>${p.same_dir.toFixed(0)}%</td>
+      <td>${p.n}</td>
+      <td style="text-align:left" class="why">${
+        (!isGroup&&p.same_sector&&p.corr>0) ? 'Same group — moving together is expected, and it is holding.'
+        : p.corr>0 ? 'Moving together — one position, not two.'
+        : 'Money leaving one has been landing in the other, hour by hour.'}</td>
+    </tr>`).join('')}
+  </table></div>`;
+}
+
+/* ---- hour-of-day grid ---- */
+function hourGrid(grid,slots,labels){
+  const all=grid.flatMap(g=>g.cells.map(c=>c.mean)).filter(v=>v!=null).map(Math.abs);
+  const lim=Math.max(0.1,Math.max(...all));
+  const rows=grid.slice().sort((a,b)=>SECTOR_RANK(a.sector)-SECTOR_RANK(b.sector));
+  return `<div class="scroll"><table class="pgrid">
+    <tr><th>Name</th>${slots.map(s=>`<th style="text-align:center">${s==='09:30'?'Open→10:30':s==='15:30'?'15:30→close':s}</th>`).join('')}
+      <th style="text-align:center">Sessions</th></tr>
+    ${rows.map(g=>`<tr>
+      <td style="white-space:nowrap"><span class="dot" style="background:${SEC[g.sector]||'var(--sec-etf)'}"></span>
+        <span class="nm">${esc(g.name)}</span>${g.name!==g.ticker?`<span class="tk">${esc(g.ticker)}</span>`:''}</td>
+      ${g.cells.map(c=>c.mean==null
+        ? `<td class="pc"><span class="pcell na">—</span></td>`
+        : `<td class="pc"><span class="pcell${c.sig?' sig':''}" style="background:${heat(c.mean,lim)}"
+            title="${esc(g.ticker)} ${labels[c.slot]} — average ${pct(c.mean)} vs the index across ${c.n} sessions; ahead in ${c.hit}% of them (p=${c.p})">
+            ${(c.mean>=0?'+':'')+c.mean.toFixed(2)}<small>${c.hit.toFixed(0)}%</small></span></td>`).join('')}
+      <td class="pc"><span class="pcell na">${g.cells[0].n}</span></td>
+    </tr>`).join('')}
+  </table></div>`;
+}
+
+/* ---- average day shape ---- */
+function dayShape(shapes,slots){
+  if(!shapes.length) return '<p class="hint">Not enough sessions yet.</p>';
+  const W=1400,H=520,pl=58,pr=210,pt=22,pb=54,N=slots.length;
+  const all=shapes.flatMap(s=>s.pts.map(p=>p.cum));
+  const lim=Math.max(0.15,Math.max(...all.map(Math.abs))*1.15);
+  const sx=i=>pl+(N===1?0:(i/(N-1))*(W-pl-pr));
+  const sy=v=>pt+((lim-v)/(2*lim))*(H-pt-pb);
+  const idx={}; slots.forEach((s,i)=>idx[s]=i);
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Average session shape versus the index">`;
+  [lim,lim/2,0,-lim/2,-lim].forEach(g=>{
+    s+=`<line x1="${pl}" y1="${sy(g)}" x2="${W-pr}" y2="${sy(g)}" stroke="${g===0?'#c9c5bb':'#f2f0ea'}"${g===0?' stroke-width="1.5"':''}/>
+        <text x="${pl-8}" y="${sy(g)+4}" font-size="11" fill="var(--text-secondary)" text-anchor="end">${g>=0?'+':''}${g.toFixed(2)}%</text>`;});
+  slots.forEach((sl,i)=>s+=`<text x="${sx(i)}" y="${H-18}" font-size="11" fill="var(--text-secondary)" text-anchor="middle">${sl==='09:30'?'10:30':sl==='15:30'?'close':sl}</text>`);
+  s+=`<text x="${pl}" y="${H-4}" font-size="10.5" fill="var(--muted)">cumulative from yesterday's close</text>`;
+  shapes.forEach(p=>{
+    const pts=p.pts.map(x=>`${sx(idx[x.slot]).toFixed(1)},${sy(x.cum).toFixed(1)}`).join(' ');
+    s+=`<polyline points="${pts}" fill="none" stroke="${SEC[p.sector]||'var(--sec-etf)'}" stroke-width="2.3" stroke-linejoin="round"><title>${esc(p.name)} — average session ends ${pct(p.last)} vs the index</title></polyline>`;});
+  const GAP=16.5;
+  const lbl=shapes.map(p=>({p,x:sx(N-1),y0:sy(p.pts[p.pts.length-1].cum)})).sort((a,b)=>a.y0-b.y0);
+  lbl.forEach((L,i)=>{L.y=i?Math.max(L.y0,lbl[i-1].y+GAP):L.y0;});
+  const over=lbl.length?lbl[lbl.length-1].y-(H-pb):0;
+  if(over>0) lbl.forEach(L=>L.y-=over);
+  lbl.forEach(L=>{
+    const col=SEC[L.p.sector]||'var(--sec-etf)';
+    s+=`<circle cx="${L.x}" cy="${L.y0}" r="3.5" fill="${col}" stroke="var(--surface-1)" stroke-width="1.5"/>`;
+    if(Math.abs(L.y-L.y0)>1.5) s+=`<line x1="${L.x+4}" y1="${L.y0}" x2="${L.x+8}" y2="${L.y}" stroke="${col}" stroke-width="1" opacity="0.5"/>`;
+    s+=`<text x="${L.x+11}" y="${L.y+4}" font-size="11" font-weight="600" fill="${col}">${esc(shortKey(L.p.ticker))} <tspan fill="var(--text-primary)" opacity="0.75">${pct(L.p.last)}</tspan></text>`;});
+  return s+`</svg>`;
+}
+
+/* ---- counter-rotation ----
+   Who goes the other way when the rest of the board moves. Conditioned on the
+   PEER MEDIAN, which excludes the name being scored — including it would let a
+   name manufacture its own contrarian record on the hours it alone was green. */
+function cBar(rate){
+  if(rate==null) return '';
+  const t=(rate-50)/50, col=t>=0?'var(--good)':'var(--critical)';
+  return `<span class="cbar"><i style="width:${Math.min(100,Math.abs(t)*100).toFixed(0)}%;background:${col};${t>=0?'left:50%':'right:50%'}"></i></span>`;
+}
+function counterTable(c,isGroup){
+  if(!c||!c.rows.length) return '<div class="empty">Not enough overlapping hours yet.</div>';
+  const cell=b=>b.rate==null
+    ? `<td class="pc"><span class="pcell na">thin</span></td><td class="hide-sm">—</td>`
+    : `<td class="pc"><span class="pcell${b.sig?' sig':''}" style="background:${heat(b.rate-50,30)}"
+         title="${b.n} hours · average ${pct(b.mean)} vs the index · p=${b.p}">${b.rate.toFixed(0)}%<small>${pct(b.mean)}</small></span></td>
+       <td class="hide-sm">${b.n}</td>`;
+  return `<div class="scroll"><table class="pgrid">
+    <tr><th rowspan="2">Name</th><th colspan="2" style="text-align:center">Rest of the board WEAKEST fifth</th>
+        <th colspan="2" style="text-align:center">Rest of the board STRONGEST fifth</th>
+        <th rowspan="2" style="text-align:center">Goes<br>against</th>
+        <th rowspan="2" style="text-align:center">Beta to<br>the pack</th>
+        <th rowspan="2" style="text-align:left">Read</th></tr>
+    <tr><th style="text-align:center">It was up</th><th class="hide-sm">Hours</th>
+        <th style="text-align:center">It was down</th><th class="hide-sm">Hours</th></tr>
+    ${c.rows.map(r=>`<tr>
+      <td style="white-space:nowrap"><span class="dot" style="background:${SEC[r.sector]||'var(--sec-etf)'}"></span>
+        <span class="nm">${esc(r.name)}</span>${r.name!==r.ticker?`<span class="tk">${esc(r.ticker)}</span>`:''}</td>
+      ${cell(r.weak)}${cell(r.strong)}
+      <td style="text-align:center">${r.opp_rate.toFixed(0)}%${cBar(r.opp_rate)}</td>
+      <td style="text-align:center" class="${r.beta<0?'up':'dn'}">${r.beta==null?'—':(r.beta>=0?'+':'')+r.beta.toFixed(2)}</td>
+      <td style="text-align:left" class="why">${counterRead(r,isGroup)}</td>
+    </tr>`).join('')}
+  </table></div>`;
+}
+function counterRead(r,isGroup){
+  const noun=isGroup?'group':'stock';
+  if(r.score>=65) return `<b>The hiding place.</b> Catches a bid in the hours the rest is being sold.`;
+  if(r.score>=57) return `Leans against the board — a partial offset, not a full hedge.`;
+  if(r.score<=43) return `<b>Moves with the pack.</b> Adds the least diversification of any ${noun} here.`;
+  if(r.score<=48) return `Mostly follows the board.`;
+  return `No consistent lean either way.`;
+}
+function extremeTable(c){
+  const rows=c.rows.filter(r=>r.ext_down.rate!=null||r.ext_up.rate!=null);
+  if(!rows.length) return `<div class="empty">No name has enough hours where ${c.broad_cut}%+ of the others moved as one to score it.</div>`;
+  const cell=b=>b.rate==null?`<td class="pc"><span class="pcell na">—</span></td><td class="hide-sm">${b.n||0}</td>`
+    :`<td class="pc"><span class="pcell${b.sig?' sig':''}" style="background:${heat(b.rate-50,30)}"
+        title="${b.n} hours · average ${pct(b.mean)} vs the index">${b.rate.toFixed(0)}%<small>${pct(b.mean)}</small></span></td>
+      <td class="hide-sm">${b.n}</td>`;
+  return `<div class="scroll"><table class="pgrid">
+    <tr><th rowspan="2">Name</th><th colspan="2" style="text-align:center">${c.broad_cut}%+ of the others DOWN</th>
+        <th colspan="2" style="text-align:center">${c.broad_cut}%+ of the others UP</th></tr>
+    <tr><th style="text-align:center">It was up</th><th class="hide-sm">Hours</th>
+        <th style="text-align:center">It was down</th><th class="hide-sm">Hours</th></tr>
+    ${rows.map(r=>`<tr>
+      <td style="white-space:nowrap"><span class="dot" style="background:${SEC[r.sector]||'var(--sec-etf)'}"></span>
+        <span class="nm">${esc(r.name)}</span></td>
+      ${cell(r.ext_down)}${cell(r.ext_up)}</tr>`).join('')}
+  </table></div>`;
+}
+
+/* ---- rotation regime ----
+   The two measures the industry uses to say whether a rotation is happening:
+   cross-sectional DISPERSION (S&P DSPX convention) and AVERAGE PAIRWISE
+   CORRELATION on raw returns (CBOE COR convention). Both are direct
+   measurements of what the board did, so nothing here carries a hit rate, a
+   p-value or a significance mark — there is no hypothesis to flag. */
+const RG={rotation:'var(--good)',split_trend:'var(--warning)',
+          macro:'var(--critical)',quiet:'var(--muted)'};
+const RGL={rotation:'Rotation',split_trend:'Split trend',macro:'Macro day',quiet:'Quiet'};
+const RGN={rotation:'Wide gaps, low correlation — money moving between names.',
+           split_trend:'Wide gaps but still correlated — whole board moving, unevenly.',
+           macro:'Narrow gaps, high correlation — one factor moving everything.',
+           quiet:'Narrow gaps, low correlation — no direction and no rotation.'};
+
+function regimeChart(R){
+  const S=R.series.filter(x=>x.corr!=null);
+  if(S.length<3) return '<p class="hint">Not enough measured sessions yet.</p>';
+  const W=1400,H=460,pl=62,pr=64,pt=22,pb=64;
+  const dmax=Math.max(...S.map(x=>x.disp))*1.1;
+  const cmin=Math.min(...S.map(x=>x.corr)),cmax=Math.max(...S.map(x=>x.corr));
+  const cpad=(cmax-cmin)*0.15||0.05;
+  const sx=i=>pl+(S.length===1?0:(i/(S.length-1))*(W-pl-pr));
+  const dy=v=>pt+(1-v/dmax)*(H-pt-pb);
+  const cy=v=>pt+(1-(v-(cmin-cpad))/((cmax+cpad)-(cmin-cpad)))*(H-pt-pb);
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Dispersion and average pairwise correlation by session">`;
+  // regime band along the bottom
+  const bw=(W-pl-pr)/S.length;
+  S.forEach((x,i)=>{s+=`<rect x="${(pl+i*bw).toFixed(1)}" y="${H-pb+12}" width="${bw.toFixed(1)}" height="13"
+      fill="${RG[x.regime]}" opacity="${x.regime==='quiet'?0.3:0.8}"><title>${x.date} — ${RGL[x.regime]} · dispersion ${x.disp.toFixed(2)} · correlation ${x.corr.toFixed(3)} · top-bottom gap ${x.spread.toFixed(2)}%</title></rect>`;});
+  // dispersion axis (left) + median line
+  [0,dmax/2,dmax].forEach(g=>{s+=`<line x1="${pl}" y1="${dy(g)}" x2="${W-pr}" y2="${dy(g)}" stroke="#f2f0ea"/>
+    <text x="${pl-8}" y="${dy(g)+4}" font-size="11" fill="var(--sec-semis)" text-anchor="end">${g.toFixed(1)}</text>`;});
+  s+=`<line x1="${pl}" y1="${dy(R.disp_median)}" x2="${W-pr}" y2="${dy(R.disp_median)}" stroke="var(--sec-semis)" stroke-width="1" stroke-dasharray="4 4" opacity="0.55"/>
+      <text x="${W-pr+6}" y="${dy(R.disp_median)+4}" font-size="10" fill="var(--sec-semis)">median</text>`;
+  s+=`<line x1="${pl}" y1="${cy(R.corr_median)}" x2="${W-pr}" y2="${cy(R.corr_median)}" stroke="var(--sec-tech)" stroke-width="1" stroke-dasharray="4 4" opacity="0.55"/>
+      <text x="${W-pr+6}" y="${cy(R.corr_median)+4}" font-size="10" fill="var(--sec-tech)">median</text>`;
+  // dispersion bars
+  S.forEach((x,i)=>{const h0=dy(0),h1=dy(x.disp);
+    s+=`<rect x="${(sx(i)-bw*0.3).toFixed(1)}" y="${h1.toFixed(1)}" width="${(bw*0.6).toFixed(1)}" height="${(h0-h1).toFixed(1)}"
+      fill="var(--sec-semis)" opacity="${x.disp>=R.disp_median?0.62:0.26}"><title>${x.date} — dispersion ${x.disp.toFixed(2)} across ${x.n} names</title></rect>`;});
+  // correlation line
+  s+=`<polyline points="${S.map((x,i)=>`${sx(i).toFixed(1)},${cy(x.corr).toFixed(1)}`).join(' ')}"
+      fill="none" stroke="var(--sec-tech)" stroke-width="2.4" stroke-linejoin="round"/>`;
+  S.forEach((x,i)=>{if(i%4===0||i===S.length-1)
+    s+=`<text x="${sx(i)}" y="${H-pb+4}" font-size="10" fill="var(--text-secondary)" text-anchor="middle">${fmtDay(x.date)}</text>`;});
+  s+=`<text x="${pl-8}" y="${pt-6}" font-size="10.5" font-weight="600" fill="var(--sec-semis)" text-anchor="end">DISPERSION</text>`;
+  s+=`<text x="${W-pr+6}" y="${pt-6}" font-size="10.5" font-weight="600" fill="var(--sec-tech)">CORRELATION</text>`;
+  return s+`</svg>`;
+}
+
+function regimeCard(R,isG){
+  if(!R) return '';
+  const noun=isG?'groups':'stocks';
+  const L=R.latest, order=['rotation','split_trend','macro','quiet'];
+  const share=order.filter(k=>R.counts[k]).map(k=>
+    `<div><div class="k">${RGL[k]}</div><div class="v">${R.share[k]}%</div>
+     <div class="s">${R.counts[k]} of ${R.scored} sessions</div></div>`).join('');
+  return `<div class="card"><div class="step">The measurement</div>
+    <h2>Is a rotation actually happening?</h2>
+    <p class="hint">Two numbers, both standard. <b style="color:var(--sec-semis)">Dispersion</b> is the
+      spread of the session's returns across the ${noun} — the S&amp;P DSPX convention — so a wide reading
+      means the board split. <b style="color:var(--sec-tech)">Average pairwise correlation</b> is the mean
+      of every pair's correlation over a trailing ${R.corr_win} sessions of hourly bars, the CBOE COR
+      convention, computed on each name's <b>own</b> return rather than its index-relative one. A rotation
+      is <b>wide dispersion with low correlation</b>: the names are far apart <i>and</i> going their own way.
+      Nothing here is a forecast or a hit rate, so nothing here carries a caveat — it is a direct
+      measurement of what the board did.</p>
+    <div class="kpi">
+      <div><div class="k">Last session</div><div class="v" style="color:${RG[L.regime]}">${RGL[L.regime]||'—'}</div>
+        <div class="s">${fmtDay(L.date)}</div></div>
+      <div><div class="k">Dispersion</div><div class="v">${L.disp.toFixed(2)}</div>
+        <div class="s">${ord(R.disp_pct)} percentile of its own history</div></div>
+      <div><div class="k">Correlation</div><div class="v">${L.corr==null?'—':L.corr.toFixed(3)}</div>
+        <div class="s">${R.corr_pct==null?'—':ord(R.corr_pct)+' percentile'}</div></div>
+      <div><div class="k">Top ${R.kcut} − bottom ${R.kcut}</div><div class="v">${L.spread.toFixed(2)}%</div>
+        <div class="s">${esc(L.leader)} ${pct(L.leader_rel)} vs ${esc(L.laggard)} ${pct(L.laggard_rel)}</div></div>
+    </div>
+    <div class="scroll">${regimeChart(R)}</div>
+    <div class="rlegend">${order.map(k=>`<span><i style="background:${RG[k]}"></i>${RGL[k]} — ${RGN[k]}</span>`).join('')}</div>
+    <h2 style="font-size:15px;margin-top:26px">How the ${R.scored} measured sessions split</h2>
+    <div class="kpi">${share}</div>
+    <div class="note">${esc(R.summary)}</div>
+  </div>`;
+}
+
+/* ---- the top-level read ----
+   Four questions, four answers. Everything below on this tab is the working;
+   this is the conclusion. Generated from the same fields the cards render, so
+   it can never disagree with them. */
+function qBox(q,answer,support,tone){
+  return `<div class="qbox${tone?' '+tone:''}">
+    <div class="q">${q}</div>
+    <div class="a">${answer}</div>
+    <div class="sup">${support}</div></div>`;
+}
+const bestBy=(rows,pick,minN)=>{
+  const ok=rows.map(r=>({r,b:pick(r)})).filter(x=>x.b&&x.b.rate!=null&&x.b.n>=minN);
+  return ok.length?ok.sort((a,b)=>b.b.rate-a.b.rate)[0]:null;
+};
+
+function plainRead(V,h,isG){
+  const nounp=isG?'groups':'stocks';
+  const R=V.regime, C=V.counter, tog=V.tog[0], opp=V.opp[0], L=R&&R.latest;
+  let boxes='';
+
+  // Q1 — what moves with what
+  boxes+=tog?qBox('What moves with what, the most?',
+    `<b>${esc(tog.a)}</b> and <b>${esc(tog.b)}</b>`,
+    `Same direction in <b>${tog.same_dir.toFixed(0)}% of hours</b> (correlation
+     ${tog.corr.toFixed(2)}, ${tog.n} hours). One position, not two.`,'good')
+    :qBox('What moves with what, the most?','—','Not enough overlapping hours yet.');
+
+  // Q2 — where the rotation signal is
+  if(R&&L&&opp){
+    const word={rotation:'Rotation — live now',split_trend:'Broad move, uneven',
+                macro:'One macro move',quiet:'Quiet — no rotation today'}[L.regime];
+    boxes+=qBox('Where is the rotation signal?',
+      `<b>${esc(opp.a)}</b> ↔ <b>${esc(opp.b)}</b>`,
+      `Opposite sides: same direction only <b>${opp.same_dir.toFixed(0)}% of hours</b>.
+       Today reads <b style="color:${RG[L.regime]}">${word}</b> — ${R.share.rotation||0}% of the last
+       ${R.scored} sessions were true rotation days.`,'rot');
+  }
+
+  // Q3 — the strict version: nearly everything down
+  if(C&&C.rows.length){
+    const dn=bestBy(C.rows,r=>r.ext_down,15), up=bestBy(C.rows,r=>r.ext_up,15);
+    boxes+=qBox(`When <b>almost everything</b> goes down, what is up?`,
+      dn?`<b>${esc(dn.r.name)}</b>`:'—',
+      dn?`Up in <b>${dn.b.rate.toFixed(0)}%</b> of the ${dn.b.n} hours when ${C.broad_cut}%+ of the other
+          ${nounp} were falling (avg ${pct(dn.b.mean)} vs the index).${up?`<br>Flip it: when ${C.broad_cut}%+
+          were rising, <b>${esc(up.r.name)}</b> was the one falling, ${up.b.rate.toFixed(0)}% of the
+          time.`:''}`
+        :`No ${isG?'group':'stock'} has enough hours where ${C.broad_cut}%+ of the others moved as one.`,'def');
+
+    // Q4 — the majority version, every name on the same footing
+    const t=C.rows[0], b=C.rows[C.rows.length-1];
+    boxes+=qBox(`When the <b>majority</b> is down, what is up?`,
+      `<b>${esc(t.name)}</b>`,
+      `Up in <b>${t.weak.rate.toFixed(0)}%</b> of the weakest ${t.weak.n} hours for everything else, and
+       down in <b>${t.strong.rate.toFixed(0)}%</b> of the strongest — it leans against the board both ways.
+       <br>The opposite is <b>${esc(b.name)}</b>: it just follows the crowd.`,'def');
+  }
+
+  const H=h.harvest||{};
+  return `<div class="card readfirst"><div class="step">The read — ${isG?'groups':'single stocks'}</div>
+    <h2>Four questions, four answers</h2>
+    <div class="qgrid">${boxes}</div>
+    ${isG?`<div class="hint" style="margin-top:15px"><b>The five groups are these names:</b></div>
+      ${groupLegend(h.groups.members)}`:''}
+    <p class="hint" style="margin:16px 0 0">Measured on <b>${h.sessions} complete sessions</b> of hourly
+      bars${H.at?` · history last updated ${new Date(H.at*1000).toLocaleString()}`:''} · the store grows
+      by itself every trading day, so these answers sharpen over time. Everything below is the working.</p>
+  </div>`;
+}
+
+function drawPatterns(){
+  const h=DATA&&DATA.hourly;
+  const box=document.getElementById('patbox');
+  if(!box) return;
+  if(!h){box.innerHTML='<div class="card"><p class="hint">Not enough stored hourly sessions yet. This screen fills in as the terminal runs.</p></div>';return;}
+  const G=h.groups, isG=PAT.lvl==='groups';
+  const V=isG?{keys:G.keys,grid:G.grid,shapes:G.shapes,pairs:G.pairs,tog:G.pairs_together,
+               opp:G.pairs_opposite,counter:G.counter,tested:G.tested,alpha:G.alpha,
+               n_sig:G.n_sig,verdict:G.verdict,regime:G.regime,secOf:k=>k,noun:'group'}
+             :{keys:h.tickers,grid:h.grid,shapes:h.shapes,pairs:h.pairs,tog:h.pairs_together,
+               opp:h.pairs_opposite,counter:h.counter,tested:h.tested,alpha:h.alpha,
+               n_sig:h.n_sig,verdict:h.verdict,regime:h.regime,secOf:k=>h.sectors[k],noun:'stock'};
+  const top=V.tog[0], bot=V.opp[0], C=V.counter;
+  const seg=`<div class="toolbar"><div class="grp"><span class="lbl">Level</span><div class="seg">
+      <button class="${!isG?'on':''}" onclick="setPat('stocks')">Single stocks</button>
+      <button class="${isG?'on':''}" onclick="setPat('groups')">Groups</button></div></div></div>`;
+
+  box.innerHTML=`
+  ${plainRead(V,h,isG)}
+
+  <div class="card"><div class="step">Step 6 · What repeats</div>
+    <h2>${h.sessions} sessions of hourly moves, read together</h2>
+    <p class="hint">Every hour of every stored session is one observation: the move over that hour
+      <b>minus the index's move over the same hour</b>. The first bar runs from yesterday's close, so the
+      overnight gap is counted there — the same convention Step 1 uses. Groups are the equal-weight average
+      of their members that hour. Sessions are stored on disk and kept, so this history keeps growing after
+      Yahoo stops serving the bars.</p>
+    <div class="kpi">
+      <div><div class="k">Sessions scored</div><div class="v">${h.sessions}</div><div class="s">complete sessions only</div></div>
+      <div><div class="k">Held on disk</div><div class="v">${h.stored_sessions}</div><div class="s">grows every refresh</div></div>
+      <div><div class="k">Range</div><div class="v" style="font-size:15px">${fmtDay(h.first_session)} → ${fmtDay(h.last_session)}</div><div class="s">stored history</div></div>
+      <div><div class="k">Hourly observations</div><div class="v">${C.hours_total}</div><div class="s">per name, at most</div></div>
+    </div>
+    ${seg}
+  </div>
+
+  ${regimeCard(V.regime,isG)}
+
+  <div class="card"><div class="step">The clear finding</div>
+    <h2>What moved with what — ${isG?'by group':'stock by stock'}</h2>
+    <p class="hint">Correlation of hourly moves versus the index across ${h.sessions} sessions.
+      <b>+1</b> means the two went the same way in the same hour; <b>−1</b> means one gained versus the
+      index in the hours the other lost. This is the part of the data that is unambiguous.</p>
+    ${isG?groupLegend(h.groups.members):legend()}
+    ${pairMatrix(V.keys,V.secOf,V.pairs)}
+    <h2 style="font-size:15px;margin-top:26px">Moved together</h2>
+    <p class="hint">Treat these as one position, not two — they rose and fell in the same hours.</p>
+    ${pairRows(V.tog,1,isG)}
+    <h2 style="font-size:15px;margin-top:24px">Moved against each other</h2>
+    <p class="hint">These are the actual rotation pairs: in the hours one gained on the index, the other lost.</p>
+    ${pairRows(V.opp,-1,isG)}
+    ${top&&bot?`<div class="note"><b>The two ends of the board.</b>
+      ${esc(top.a)} and ${esc(top.b)} moved the same way in ${top.same_dir.toFixed(0)}% of hours
+      (correlation ${top.corr.toFixed(2)}, ${top.n} hours). ${esc(bot.a)} and ${esc(bot.b)} moved the same
+      way in only ${bot.same_dir.toFixed(0)}% (correlation ${bot.corr.toFixed(2)}, ${bot.n} hours) — that is
+      money moving out of one and into the other inside the session, not two separate stories.</div>`:''}
+  </div>
+
+  <div class="card"><div class="step">Who goes the other way</div>
+    <h2>When everything else is down, what is up?</h2>
+    <p class="hint">For each ${V.noun}, every hour is sorted by how the <b>rest</b> of the board did — the
+      median move of all the other names, which never includes the ${V.noun} being scored. The two columns
+      are the weakest and strongest fifth of those hours, about ${C.rows[0]?C.rows[0].weak.n:'80'} hours each.
+      <b>Beta to the pack</b> is the slope against that same median: negative means it genuinely rises when
+      the others fall, rather than just falling less.</p>
+    ${counterTable(C,isG)}
+    <div class="note">${esc(C.verdict)}</div>
+    <h2 style="font-size:15px;margin-top:26px">The literal version: hours when ${C.broad_cut}%+ of the others moved as one</h2>
+    <p class="hint">The question asked strictly. Far fewer hours qualify — ${C.hours_down} broad-down and
+      ${C.hours_up} broad-up out of ${C.hours_total} — so treat this as a check on the table above, not as
+      the primary reading. Where the two agree, the finding is solid.</p>
+    ${extremeTable(C)}
+  </div>
+
+  <div class="card"><div class="step">The honest test</div>
+    <h2>Does anything repeat at the same hour?</h2>
+    <p class="hint">Each cell is the average move versus the index in that hour, with the share of sessions
+      it was ahead underneath. ${V.tested} cells are screened at once, so a few will look strong by luck
+      alone — a cell is only marked <b>✓</b> when its win rate clears an exact binomial test at
+      p &lt; ${V.alpha.toFixed(5)} (0.05 split across all ${V.tested} cells).</p>
+    ${hourGrid(V.grid,h.slots,h.slot_labels)}
+    <div class="note">${esc(V.verdict)}</div>
+  </div>
+
+  <div class="card"><div class="step">The shape of it</div>
+    <h2>The average session, hour by hour</h2>
+    <p class="hint">Each hour's average stacked into a cumulative path — where a ${V.noun} has typically been
+      versus the index at each point in the day, averaged over ${h.sessions} sessions. Read it as the average,
+      not the forecast: the spread of individual days around these lines is many times their height.</p>
+    ${isG?groupLegend(h.groups.members):legend()}
+    <div class="scroll">${dayShape(V.shapes,h.slots)}</div>
+  </div>`;
+}
+
+/* ---------- tabs ---------- */
+const TABS=[['today','Today'],['patterns','Patterns'],['stocks','Stocks'],['sectors','Sectors'],
+            ['pct','Percentiles'],['backtest','Backtest']];
+let TAB=localStorage.getItem('rt_tab')||'today';
+function setTab(k){
+  TAB=k; localStorage.setItem('rt_tab',k);
+  document.querySelectorAll('section[data-tab]').forEach(s=>s.classList.toggle('on',s.dataset.tab===k));
+  document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.k===k));
+  if(k==='today') drawQuadrant();
+  if(k==='patterns') drawPatterns();
+  if(k==='pct') drawPct();
+  window.scrollTo({top:0,behavior:'instant'});
+}
+
+function render(d){
+  DATA=d;
+  document.getElementById('asof').textContent='as of '+new Date(d.as_of*1000).toLocaleDateString()+' · ';
+  const st=d.stocks,m=d.morning;
+  const et=d.sector_etfs||[];
+  document.getElementById('tabs').innerHTML=TABS.map(([k,l])=>
+    `<button data-k="${k}" onclick="setTab('${k}')">${l}${
+      k==='stocks'?`<span class="cnt">${st.length}</span>`:
+      k==='sectors'?`<span class="cnt">${et.length}</span>`:
+      k==='patterns'&&d.hourly?`<span class="cnt">${d.hourly.sessions}d</span>`:''}</button>`).join('');
+  let h='<section data-tab="today">';
+
+  /* 0. headline */
+  h+=`<div class="card"><h2>Today, in one line</h2>
+    <div class="headline">${d.headline}</div>
+    ${d.live?`<div class="live"><b>Live session — today's numbers are still moving.</b>
+      Prices are last trade, not a close, so every refresh shifts them slightly. Calls settle after 4pm ET.</div>`
+     :`<div class="settled">Settled — these are closing prices for the session shown above.</div>`}</div>`;
+
+  /* 1. morning */
+  h+=`<div class="card"><div class="step">Step 1 · Catch it in the morning</div>
+    <h2>Today's session, hour by hour</h2>
+    <p class="hint">Each line is one stock's performance <b>versus the index</b>, measured from <b>yesterday's close</b> — so an overnight gap counts, and the line ends exactly where the daily table below says it should. Lines are coloured by sector, so a rotation looks like one colour pulling away from another. ${m?`<b>${m.bars_done} hourly bar${m.bars_done===1?'':'s'}</b> done so far.`:''} Any stock that swings <b>from − to + (or + to −) by ${FLAG_SWING}%+</b> on its own price (⇄) is drawn bold, the rest dimmed — and you get an email the moment it happens.</p>
+    ${legend()}
+    <div class="scroll">${intraChart(m)}</div>
+    ${intraFlagCaption(m)}`;
+  if(m&&m.backtest){
+    const b=m.backtest;
+    h+=`<div class="note"><b>Does the morning read hold into the close?</b> Tested on ${b.sessions} sessions of hourly bars (${b.n} stock-days): when a stock led or lagged the index over the first two hours, the rest of the day went the same way <b>${b.hit}%</b> of the time.<br>${esc(b.verdict)}</div>`;
+  }
+  h+=`</div>`;
+
+  /* 2. quadrant framework — switchable benchmark + filterable bar view */
+  h+=`<div class="card" id="quadcard"><div class="step">Step 2 · See who is being bought</div>
+    <h2>The quadrant framework</h2>
+    <p class="hint">The 14 tracked stocks plus the <b>SPY, QQQ and IGV</b> ETFs (drawn as ◆ diamonds), each placed by its move <b>yesterday (left–right) vs today (up–down)</b> against your chosen benchmark. Top-right is still being bought; bottom-left is being sold. A component measured against its own benchmark sits at the centre.</p>
+    <div class="toolbar"><div class="grp"><span class="lbl">Benchmark</span><div class="seg">
+      ${d.benchmarks.map(b=>`<button data-dim="bench" data-k="${b}" onclick="setQ('bench','${b}')">vs ${b}</button>`).join('')}
+    </div></div></div>
+    ${legend()}
+    <div class="scroll" id="qmap"></div>
+    <h2 style="font-size:15px;margin-top:24px">Ranked bars</h2>
+    <p class="hint">Every component ranked by its relative move over the chosen window — right of the centre line is outperformance versus the benchmark, left is underperformance. Filter to a single quadrant to see just what is running, turning, fading or being avoided.</p>
+    <div class="toolbar">
+      <div class="grp"><span class="lbl">Window</span><div class="seg">
+        <button data-dim="tf" data-k="d1" onclick="setQ('tf','d1')">1 day</button>
+        <button data-dim="tf" data-k="d5" onclick="setQ('tf','d5')">5 days</button>
+        <button data-dim="tf" data-k="d30" onclick="setQ('tf','d30')">30 days</button></div></div>
+      <div class="grp"><span class="lbl">Quadrant</span><div class="seg">
+        <button data-dim="quad" data-k="all" onclick="setQ('quad','all')">All</button>
+        <button data-dim="quad" data-k="running" onclick="setQ('quad','running')">Running</button>
+        <button data-dim="quad" data-k="turning" onclick="setQ('quad','turning')">Turning</button>
+        <button data-dim="quad" data-k="fading" onclick="setQ('quad','fading')">Fading</button>
+        <button data-dim="quad" data-k="avoid" onclick="setQ('quad','avoid')">Avoid</button></div></div>
+    </div>
+    <div class="scroll" id="qbars"></div></div>`;
+  h+=`</section>`;
+
+  /* ============================== PATTERNS TAB ============================= */
+  h+=`<section data-tab="patterns"><div id="patbox"></div></section>`;
+
+  /* ============================== SECTORS TAB ============================== */
+  h+=`<section data-tab="sectors">`;
+
+  /* 3. sector duration */
+  h+=`<div class="card"><div class="step">Step 3 · Track how long it runs</div>
+    <h2>Rotation age — how far into the move are we?</h2>
+    <p class="hint">"Run" is how many sessions in a row the sector has stayed on the same side of the index. "Typical" is the median run length for that same setup over the last 2 years, so you can see whether a move is young or already stretched.</p>
+    <div class="scroll"><table>
+    <tr><th>Sector</th><th>Today<br>vs index</th><th>5 days<br>vs index</th><th>Call</th><th>Run so far</th><th>Typical run</th><th>Stretched?</th></tr>
+    ${d.sectors_detail.map(s=>{
+      const stretched=s.streak>Math.max(s.p75_days,1);
+      return `<tr>
+      <td><span class="dot" style="background:${SEC[s.sector]}"></span><span class="nm">${esc(s.sector)}</span></td>
+      <td class="${cls(s.rel_today)}"><b>${pct(s.rel_today)}</b></td>
+      <td class="${cls(s.rel_5d)}">${pct(s.rel_5d)}</td>
+      <td><span class="pill" style="background:${QC[s.quad]}">${esc(s.call)}</span></td>
+      <td>${s.streak} day${s.streak===1?'':'s'} ${s.streak_dir>0?'ahead':'behind'}</td>
+      <td>${s.typical_days.toFixed(0)} day${s.typical_days===1?'':'s'} <span class="why">(75% end by ${s.p75_days.toFixed(0)})</span></td>
+      <td class="${stretched?'dn':'up'}">${stretched?'Stretched':'Still young'}</td></tr>`;}).join('')}
+    </table></div>
+    <div class="note"><b>The honest finding.</b> Across 2 years, these rotations are <b>short</b>. At the sector level the median run is under a day and only ~25% last 2 sessions or more; at the single-stock level the median is 1 day. Five days after a RUNNING signal the average extra gain versus the index is just <b>+0.34%</b> (sector) — real, but small. Treat a multi-day rotation as the exception you must confirm daily, not the base case.</div></div>`;
+
+  /* 3b. the eleven SPDR sectors + semis and software, tracked like stocks */
+  h+=`<div class="card"><div class="step">Sector tape</div>
+    <h2>Every sector, versus the index</h2>
+    <p class="hint">The eleven SPDR sector ETFs plus semis (SMH) and software (IGV), each measured the
+      same way a stock is: relative to SPY, one dot per session, green when the sector beat the index.
+      This is where a rotation is actually named — a stock can wobble while its sector keeps trending.
+      <b>Click any row</b> for the 30-day dot chart and the full percentile card.</p>
+    ${entityTable(et,d.etf_run_stats,'e_')}</div>`;
+  h+=streakBoard(d.etf_streak_board,d.live,'sector');
+  h+=`</section>`;
+
+  /* ============================== STOCKS TAB ============================== */
+  h+=`<section data-tab="stocks">`;
+
+  /* 4. correlation persistence */
+  h+=`<div class="card"><div class="step">Step 4 · Is the relationship holding?</div>
+    <h2>Each stock versus semis</h2>
+    <p class="hint">Correlation of each stock's move-vs-index against the semis' move-vs-index. <b>Negative means it goes down when semis go up</b> — the other side of the rotation. Compare the fast (10-day) and slow (60-day) columns: fast well below slow means the relationship is <b>newly</b> negative and currently strengthening.</p>
+    <div class="scroll"><table>
+    <tr><th>Stock</th><th>Last 10 days</th><th>Last 60 days</th><th class="hide-sm">Change</th><th class="hide-sm">Rolling 10-day (last 40 sessions)</th><th>Reading</th></tr>
+    ${st.slice().sort((a,b)=>a.semis_fast-b.semis_fast).map(s=>{
+      const dlt=s.semis_fast-s.semis_slow;
+      let read='Moving with semis';
+      if(s.semis_fast<-0.4) read=dlt<-0.15?'Against semis — and strengthening':'Against semis';
+      else if(s.semis_fast>0.4) read='Rides with semis';
+      else read='No clear link';
+      return `<tr>
+      <td><span class="dot" style="background:${SEC[s.sector]}"></span><span class="nm">${esc(s.name)}</span><span class="tk">${esc(s.ticker)}</span></td>
+      <td class="${s.semis_fast>=0?'up':'dn'}"><b>${s.semis_fast.toFixed(2)}</b></td>
+      <td>${s.semis_slow.toFixed(2)}</td>
+      <td class="hide-sm ${cls(dlt)}">${dlt>=0?'+':''}${dlt.toFixed(2)}</td>
+      <td class="hide-sm">${corrSpark(s.corr_hist)}</td>
+      <td style="text-align:left" class="why">${read}</td></tr>`;}).join('')}
+    </table></div></div>`;
+
+  /* 5. streak board + per-stock dot table */
+  h+=streakBoard(d.streak_board,d.live,'stock');
+  h+=`<div class="card"><h2>What to take next</h2>
+    <p class="hint">Every stock, ranked by today's move versus the index. Dots are the last ${MAIN_DOTS}
+      sessions — green means it beat the index that day, red means it lagged. <b>5d pct</b> ranks the five-day
+      relative move against the name's own two-year history: 90+ is stretched, 10 or below is washed out.
+      <b>7d/30d score</b> are the green-vs-red tally over those windows — green pill means the majority of
+      sessions beat the index, red means the majority lagged. <b>Click any row</b> for the full 30-day dot
+      chart, every run inside it, the percentile card, and what history says happens next.</p>
+    <div class="legend"><span><i style="background:var(--good)"></i>Beat the index</span>
+      <span><i style="background:var(--critical)"></i>Lagged the index</span>
+      <span><i style="background:#b7e0b7;border:1px solid #d8d5cc"></i>Pale = inside &plusmn;0.15%, barely a move</span>
+      <span>Gold ring = today (provisional while the session is open)</span></div>
+    ${entityTable(st,d.run_stats,'s_')}</div>`;
+  h+=`</section>`;
+
+  /* ============================ PERCENTILES TAB ============================ */
+  const board=d.pct_board||{stretched:[],washed:[],ranked:[]};
+  h+=`<section data-tab="pct">
+    <div class="card"><div class="step">Step 5 · How unusual is it?</div>
+      <h2>The percentile view</h2>
+      <p class="hint">A streak counts days. A percentile grades them. Every number below is the rank of
+        today's rolling move <b>versus the index</b> against that same name's own history — so the reading
+        you get is "NVDA has beaten the index 5 of 5 sessions, <i>and</i> that run is in the 97th percentile
+        of everything it has done", which is a claim about how stretched the move is, not just how long.
+        Green is high, red is low, the number is the percentile and the small figure is the actual move.</p>
+      <div class="toolbar">
+        <div class="grp"><span class="lbl">Universe</span><div class="seg pseg">
+          ${[['all','Everything'],['stocks','Stocks'],['sectors','Sectors']].map(([k,l])=>
+            `<button data-dim="grid_uni" data-k="${k}" onclick="setP('grid_uni','${k}')">${l}</button>`).join('')}
+        </div></div>
+        <div class="grp"><span class="lbl">Sort &amp; read by</span><div class="seg pseg">
+          ${d.pct_windows.map(w=>`<button data-dim="win" data-k="${w}" onclick="setP('win','${w}')">${w} day${w>1?'s':''}</button>`).join('')}
+        </div></div>
+      </div>
+      <div id="pgridbox"></div>
+      <div class="note">Ranks use every window in each name's own history, so they compare a name to itself,
+        not to the index or to each other. Names with less than 60 windows of history (a recent listing such
+        as SpaceX or SK hynix) show a dash rather than a made-up rank.</div>
+    </div>
+    <div class="card"><h2>Today's extremes</h2>
+      <p class="hint">Only the top and bottom deciles of 5-day relative strength. These are the names where
+        the percentile is actually saying something.</p>
+      <h4 style="font-size:12.5px;margin:14px 0 8px;text-transform:uppercase;letter-spacing:.06em;color:var(--gold)">Stretched — 90th percentile and above</h4>
+      ${pctCards(board.stretched,'hot')}
+      <h4 style="font-size:12.5px;margin:18px 0 8px;text-transform:uppercase;letter-spacing:.06em;color:var(--gold)">Washed out — 10th percentile and below</h4>
+      ${pctCards(board.washed,'cold')}
+    </div>
+    <div class="card"><h2>What has followed each percentile zone</h2>
+      <p class="hint">Two years of history, pooled across the set: rank each day's relative move using
+        <b>only the history available up to that day</b>, then measure what came next. Bars show the
+        <b>edge</b> — the bucket's forward move minus the average across all buckets — because this universe
+        drifts against the index and a raw bar would show the drift instead of the signal.</p>
+      <div class="toolbar">
+        <div class="grp"><span class="lbl">Set</span><div class="seg pseg">
+          <button data-dim="bt_uni" data-k="stocks" onclick="setP('bt_uni','stocks')">Stocks</button>
+          <button data-dim="bt_uni" data-k="sectors" onclick="setP('bt_uni','sectors')">Sectors</button></div></div>
+        <div class="grp"><span class="lbl">Ranked window</span><div class="seg pseg">
+          ${d.pct_windows.map(w=>`<button data-dim="bt_win" data-k="${w}" onclick="setP('bt_win','${w}')">${w}d</button>`).join('')}
+        </div></div>
+        <div class="grp"><span class="lbl">Held for</span><div class="seg pseg">
+          ${d.pct_horizons.map(x=>`<button data-dim="bt_hor" data-k="${x}" onclick="setP('bt_hor','${x}')">${x}d</button>`).join('')}
+        </div></div>
+      </div>
+      <div class="scroll" id="pbtbox"></div>
+      <div class="hint" id="pbtverdict" style="margin:8px 0 0"></div>
+      <div class="note"><b>Stocks:</b> ${d.pct_verdict.stocks}</div>
+      <div class="note"><b>Sectors:</b> ${d.pct_verdict.sectors}</div>
+      <div class="note">Two cautions worth keeping. Windows overlap, so the case counts are larger than the
+        number of independent observations — treat a 0.1pt spread as noise. And the ranks are relative to a
+        two-year sample that was mostly a bull tape; the bottom decile bouncing is partly that drift, which
+        is exactly why the bars are shown net of baseline.</div>
+    </div></section>`;
+
+  /* ============================== BACKTEST TAB ============================== */
+  h+=`<section data-tab="backtest">`;
+
+  /* 6. backtest detail */
+  const dt=(t,obj)=>`<div><h2 style="font-size:15px">${t}</h2>
+    <table><tr><th>Signal</th><th>Times seen</th><th>Median run</th><th>Ran 2+ days</th><th>Next 5 days</th><th>Right</th></tr>
+    ${['running','turning','fading','avoid'].filter(k=>obj[k]).map(k=>{const v=obj[k];return `<tr>
+      <td><span class="pill" style="background:${QC[k]}">${esc(v.label)}</span></td>
+      <td>${v.n.toLocaleString()}</td><td>${v.median_days.toFixed(0)}d</td>
+      <td>${v.share_2plus}%</td>
+      <td class="${cls(v.fwd5)}">${pct(v.fwd5)}</td><td>${v.hit5}%</td></tr>`;}).join('')}
+    </table></div>`;
+  h+=`<div class="card"><h2>The backtest behind the calls</h2>
+    <p class="hint">Two years of daily history. "Next 5 days" is the average extra move versus the index in the signal's own direction — positive means the call kept working. "Right" is how often that was positive. Anything near 50% is a coin flip and is shown as such.</p>
+    <div class="grid2">${dt('By sector',d.sector_duration)}${dt('By single stock',d.duration)}</div>
+    ${d.duration.avoid?`<div class="note">Read the AVOID row carefully: at <b>${pct(d.duration.avoid.fwd5)}</b> over the next 5 days it is <b>${d.duration.avoid.fwd5<0?'negative':'positive'}</b>, meaning names that lagged two days running have tended to <b>${d.duration.avoid.fwd5<0?'bounce back':'keep lagging'}</b>. ${d.duration.avoid.fwd5<0?'Selling them late has been the losing side of this signal.':''}</div>`:''}</div>`;
+
+  h+=`<div class="card"><h2>Run-length base rates</h2>
+    <p class="hint">Pooled across every name with a full two years of history — the table each single-name
+      "what the run says" line is quoting from. Stocks on the left, sectors on the right.</p>
+    <div class="grid2">${runTable('Stocks',d.run_stats)}${runTable('Sector ETFs',d.etf_run_stats)}</div>
+    <div class="note">Anything within a few points of 50% is a coin flip. The usable part is the break —
+      and only where the sample is large.</div></div>`;
+  h+=`</section>`;
+
+  document.getElementById('app').innerHTML=h;
+  setTab(TAB);                                    // restores last tab, paints it
+  drawQuadrant();                                 // paint map + bars from state
+  drawPct();
+}
+
+function runTable(t,rs){
+  return `<div><h2 style="font-size:15px">${t}</h2>
+    <table><tr><th>Run length</th><th>Seen</th><th>Ran on</th><th>Flipped</th><th>Breaks</th><th>3d after break</th><th>Went new way</th></tr>
+    ${[1,2,3,4,5,6].map(i=>{const v=rs[String(i)]||{};return `<tr>
+      <td>${i===6?'6+':i} day${i>1?'s':''}</td><td>${(v.n||0).toLocaleString()}</td>
+      <td>${v.continue_pct}%</td><td>${v.reverse_pct}%</td><td>${(v.n_break||0).toLocaleString()}</td>
+      <td class="${cls(v.after_break_fwd3||0)}">${pct(v.after_break_fwd3||0)}</td>
+      <td>${v.after_break_hit}%</td></tr>`;}).join('')}
+    </table></div>`;
+}
+
+async function load(force){
+  document.getElementById('app').innerHTML='<div class="loading">Loading — daily history + 60 days of hourly bars…</div>';
+  try{
+    const r=await fetch('/api/rotation'+(force?'?refresh=1':''));
+    const d=await r.json();
+    if(d.error) throw new Error(d.error);
+    render(d);
+  }catch(e){document.getElementById('app').innerHTML='<div class="loading">Failed: '+esc(e.message)+'</div>';}
+}
+load();
+</script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+#!/bin/bash
+# proflexdaily — launch the Proflex Daily stock chartplay dashboard
+DIR="$HOME/Desktop/claude-work/proflex-daily-stocks"
+URL="http://localhost:8000"
+
+# open browser shortly after server boots
+( sleep 1.5; command -v open >/dev/null && open "$URL" ) &
+
+echo "Starting Proflex Daily…  $URL"
+exec python3 "$DIR/server.py"

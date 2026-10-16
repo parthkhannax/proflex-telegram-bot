@@ -1,0 +1,17 @@
+_Run | Worry | Stock | Conviction | All Clear above_
+________________________________________________________________
+756 |  765  | SPY   | Flat/down  | aabove 770 its still toppish so really need a breakout 
+695 | 702     | QQQ   | Up           | above 725 
+315 | 330   | GOOG  | up          | 341 then 348 
+565 | 595     | Meta  | None          | above 622 
+238    | 248    | AMZN  | up          | above 266 
+300 | 309     | AAPL  | up          | All Clear till 344 
+424 | 450      | AMD    | -          | Above 500 
+476 | 490     | MSFT  | None         | 515 
+200 | 206     | NVDA  | Up          | 211 
+330 | 342   | AVGO  | up          | 375 
+320 | 340   | TSLA  | None         | 375 
+229 | 244     | ALAB  | Up         | 308 
+55  | 59     | SLV   | Up         | 65 
+885 | 900     | MU    | Chop         | 1040 
+38  | 42     | IBIT  | Down         | 47

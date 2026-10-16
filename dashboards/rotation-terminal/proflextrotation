@@ -1,0 +1,13 @@
+#!/bin/bash
+# proflextrotation — launch the Proflex Rotation Terminal
+DIR="$HOME/Desktop/claude-work/rotation-terminal"
+URL="http://localhost:11001"
+
+# kill any stale process already bound to port 11001
+lsof -tiTCP:11001 -sTCP:LISTEN | xargs -r kill -9 2>/dev/null
+
+# open browser shortly after server boots
+( sleep 2; command -v open >/dev/null && open "$URL" ) &
+
+echo "Starting Proflex Rotation Terminal…  $URL"
+exec python3 "$DIR/server.py"

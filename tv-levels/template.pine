@@ -1,0 +1,60 @@
+//@version=6
+indicator("Proflex Levels", overlay=true, max_lines_count=500, max_labels_count=500)
+LEVELS = "__LEVELS__"
+runCol = #EF5350
+worryCol = #FF9800
+acCol = #26A69A
+tpCol = #2962FF
+grey = #B2B5BE
+atr = ta.atr(14)
+var table box = table.new(position.top_right, 2, 6, bgcolor=color.new(#131722, 10), border_width=1, border_color=#434651, frame_width=1, frame_color=#434651)
+drawLevel(float px, string name, color base) =>
+    if not na(px) and px > 0
+        dist = math.abs(px - close) / atr
+        if dist <= 15
+            faded = dist > 5
+            col = faded ? color.new(base, 35) : base
+            line.new(math.max(0, bar_index - 150), px, bar_index, px, color=col, width=2, extend=extend.right, style=faded ? line.style_dashed : line.style_solid)
+            pct = (px - close) / close * 100
+            txt = name + " " + str.tostring(px, format.mintick) + "  " + (pct >= 0 ? "+" : "−") + str.tostring(math.abs(pct), "0.0") + "%"
+            label.new(bar_index + 3, px, txt, color=col, textcolor=color.white, style=label.style_label_left, size=size.small)
+drawList(string s, string name, color c) =>
+    float first = na
+    for [i, x] in str.split(s, "/")
+        v = str.tonumber(x)
+        if i == 0
+            first := v
+        drawLevel(v, i == 0 ? name : name + " " + str.tostring(i + 1), c)
+    first
+cell(int r, string k, string v, color vc) =>
+    table.cell(box, 0, r, k, text_color=grey, text_size=size.small, text_halign=text.align_left)
+    table.cell(box, 1, r, v, text_color=vc, text_size=size.normal, text_halign=text.align_left)
+if barstate.islast
+    for l in line.all
+        line.delete(l)
+    for lb in label.all
+        label.delete(lb)
+    table.clear(box, 0, 0, 1, 5)
+    for blk in str.split(LEVELS, ";")
+        f = str.split(blk, "|")
+        if array.size(f) == 7 and array.get(f, 0) == syminfo.ticker
+            run = str.tonumber(array.get(f, 1))
+            worry = str.tonumber(array.get(f, 2))
+            conv = array.get(f, 3)
+            ac = array.get(f, 4)
+            tp = array.get(f, 5)
+            note = array.get(f, 6)
+            drawLevel(run, "Run", runCol)
+            drawLevel(worry, "Worry", worryCol)
+            ac1 = drawList(ac, "Clear", acCol)
+            tp1 = drawList(tp, "Take Profit", tpCol)
+            cu = str.upper(conv)
+            convCol = str.contains(cu, "UP") ? acCol : str.contains(cu, "DOWN") ? runCol : str.contains(cu, "FLAT") or str.contains(cu, "CHOP") ? worryCol : grey
+            zone = close < run ? "RUN" : close < worry ? "WORRY" : na(ac1) or close < ac1 ? "NEUTRAL" : na(tp1) or close < tp1 ? "CLEAR" : "TAKE PROFIT"
+            zoneCol = zone == "RUN" ? runCol : zone == "WORRY" ? worryCol : zone == "CLEAR" ? acCol : zone == "TAKE PROFIT" ? tpCol : grey
+            cell(0, "Proflex", syminfo.ticker, color.white)
+            cell(1, "Dir", conv, convCol)
+            cell(2, "Zone", zone, zoneCol)
+            cell(3, "Levels", "Run " + str.tostring(run) + " · Worry " + str.tostring(worry) + " · Clear " + ac + (tp != "" ? " · TP " + tp : ""), #D1D4DC)
+            if note != "-"
+                cell(4, "Note", note, #D1D4DC)

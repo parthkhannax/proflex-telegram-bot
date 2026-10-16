@@ -1,0 +1,5 @@
+{"services": [
+ {"id": "daily", "name": "Daily Chartplay", "port": 8000, "cwd": "../dashboards/proflex-daily-stocks", "cmd": ["python3", "server.py"]},
+ {"id": "sector", "name": "Sector Rotation", "port": 5050, "cwd": "../dashboards/sector-dashboard", "cmd": ["python3", "server.py"]},
+ {"id": "rotation", "name": "Rotation Terminal", "port": 11001, "cwd": "../dashboards/rotation-terminal", "cmd": ["python3", "server.py"]}
+]}

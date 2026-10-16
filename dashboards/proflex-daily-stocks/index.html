@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Proflex Daily · Stock Chartplay</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800;900&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --dark:#141c25; --gold:#a68a3e; --gold-b:#d4bc6a; --white:#fff; --bg:#f3f3ee;
+    --navy:#1a2f4a; --muted:#5a6672; --line:rgba(20,28,37,0.08);
+    --green:#16a34a; --red:#dc2626;
+    --green-bg:rgba(22,163,74,0.12); --red-bg:rgba(220,38,38,0.10);
+    --prio-bg:#faf6ea;
+    --font-h:'Playfair Display',serif; --font-b:'Inter',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--dark);font-family:var(--font-b);
+    -webkit-font-smoothing:antialiased;padding:34px 20px 70px}
+  .card{background:var(--white);max-width:1240px;margin:0 auto;border-radius:14px;
+    box-shadow:0 2px 34px rgba(0,0,0,.07);overflow:hidden}
+  .accent{height:4px;background:linear-gradient(90deg,#a68a3e,#d4bc6a,#a68a3e)}
+  .pad{padding:30px 40px 34px}
+  /* header */
+  .head{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  .brand{display:flex;align-items:center;gap:14px}
+  .brand img{width:44px;height:44px}
+  .brand .name{font-family:var(--font-h);font-weight:800;font-size:22px;
+    letter-spacing:4px;color:var(--gold)}
+  .badge{font-weight:700;font-size:10px;letter-spacing:2px;text-transform:uppercase;
+    color:var(--gold);border:1px solid rgba(166,138,62,.4);padding:6px 12px;border-radius:20px}
+  h1{font-family:var(--font-h);font-weight:800;font-size:30px;line-height:1.15;
+    margin-top:20px;letter-spacing:-.3px}
+  h1 .g{color:var(--gold)}
+  .sub{color:var(--muted);font-size:13px;margin-top:8px}
+  .sub b{color:var(--dark)}
+  .divider{height:1px;background:linear-gradient(90deg,var(--gold) 30%,transparent);
+    opacity:.3;margin:20px 0 6px}
+  .topbar{display:flex;justify-content:space-between;align-items:center;gap:16px;
+    flex-wrap:wrap;margin-top:16px}
+  .actions{display:flex;gap:10px;flex-wrap:wrap}
+  button{font-family:inherit;cursor:pointer;border:none;border-radius:9px;
+    font-weight:700;font-size:13px;transition:.15s;letter-spacing:.2px}
+  .btn-gold{background:linear-gradient(180deg,var(--gold-b),var(--gold));
+    color:#241c00;padding:11px 19px;box-shadow:0 2px 10px rgba(166,138,62,.3)}
+  .btn-gold:hover{filter:brightness(1.06)}
+  .btn-ghost{background:#fff;color:var(--dark);border:1px solid var(--line);padding:10px 15px}
+  .btn-ghost:hover{border-color:var(--gold)}
+  button:disabled{opacity:.5;cursor:wait}
+  /* stats */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:22px 0 4px}
+  .stat{background:#faf9f5;border:1px solid var(--line);border-radius:12px;padding:15px 18px}
+  .stat .n{font-family:var(--font-h);font-size:30px;font-weight:800;line-height:1}
+  .stat .l{font-size:10px;letter-spacing:1.4px;text-transform:uppercase;
+    color:var(--muted);font-weight:700;margin-top:6px}
+  .n.g{color:var(--green)} .n.r{color:var(--red)} .n.gold{color:var(--gold)}
+  .n.d{color:var(--navy)}
+  /* tabs */
+  .tabs{display:flex;gap:2px;margin:24px 0 10px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .tab{background:none;color:var(--muted);padding:10px 15px;font-weight:700;
+    font-size:13px;border-bottom:2px solid transparent}
+  .tab.active{color:var(--gold);border-bottom-color:var(--gold)}
+  .tab:hover{color:var(--dark)}
+  /* section head */
+  .section-h{font-family:var(--font-b);font-weight:700;font-size:11px;letter-spacing:1.6px;
+    text-transform:uppercase;color:var(--navy);margin:18px 0 6px;display:flex;
+    align-items:center;gap:9px}
+  .section-h .bar{width:4px;height:15px;border-radius:2px}
+  .section-h span{color:var(--muted);font-weight:500;text-transform:none;letter-spacing:.3px;font-size:11px}
+  /* table */
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th{text-align:left;color:var(--muted);font-size:10px;letter-spacing:1.2px;
+    text-transform:uppercase;font-weight:700;padding:11px 12px;
+    border-bottom:2px solid var(--line);position:sticky;top:0;background:#fff}
+  th.r,td.r{text-align:right}
+  th.c,td.c{text-align:center}
+  td{padding:12px;border-bottom:1px solid #f0efe9;vertical-align:middle}
+  tr.prio td{background:var(--prio-bg)}
+  tr.prio td:first-child{border-left:3px solid var(--gold)}
+  tr:hover td{background:#f7f6f1}
+  tr.prio:hover td{background:#f6f0e0}
+  .tk{font-weight:800;font-size:14px;color:var(--dark)}
+  .star{color:var(--gold);margin-left:5px}
+  .co{color:var(--muted);font-size:12px}
+  .cat{display:inline-block;font-size:10px;color:var(--navy);background:#f1f0ea;
+    border:1px solid var(--line);border-radius:20px;padding:2px 9px;white-space:nowrap}
+  .pill{display:inline-block;border-radius:20px;padding:4px 11px;font-weight:700;
+    font-size:12.5px;white-space:nowrap}
+  .up{color:var(--green);background:var(--green-bg)}
+  .down{color:var(--red);background:var(--red-bg)}
+  .flat{color:var(--muted);background:#f1f0ea}
+  .p50up{color:var(--green);font-weight:600} .p50down{color:var(--red);font-weight:600}
+  .err{color:var(--red);font-size:11px;font-style:italic}
+  /* ── forward P/E ───────────────────────────────────────────────────────── */
+  .fpe-note{font-size:11.5px;color:var(--muted);line-height:1.65;margin:10px 0 2px;
+    background:#faf9f5;border:1px solid var(--line);border-left:3px solid var(--gold);
+    border-radius:0 9px 9px 0;padding:11px 14px}
+  .fpe-note b{color:var(--navy)}
+  th.sortable{cursor:pointer;user-select:none;white-space:nowrap}
+  th.sortable:hover{color:var(--gold)}
+  th.sortable .ar{color:var(--gold);font-size:9px;margin-left:3px}
+  .fye{display:inline-block;font-size:10px;font-weight:700;color:var(--navy);
+    background:#f1f0ea;border:1px solid var(--line);border-radius:5px;padding:2px 7px}
+  .fye.cal{color:var(--muted);background:#fff}
+  .warn{color:var(--red);font-size:10px;margin-left:3px;cursor:help;font-weight:700}
+  .part{color:var(--gold);font-size:10px;margin-left:3px;cursor:help;font-weight:700}
+  .eps{font-weight:600;color:var(--dark)}
+  .pe{font-weight:800;font-size:14px;color:var(--dark)}
+  .pe.na{font-weight:500;font-size:13px;color:var(--muted)}
+  .fpe-row{cursor:pointer}
+  .led{background:#faf9f5}
+  .led td{padding:0}
+  .led-in{padding:13px 16px 15px}
+  .led-h{font-size:10px;letter-spacing:1.3px;text-transform:uppercase;font-weight:700;
+    color:var(--navy);margin-bottom:9px}
+  .led-q{display:flex;gap:7px;flex-wrap:wrap}
+  .qb{border:1px solid var(--line);border-radius:8px;padding:7px 10px;background:#fff;
+    min-width:82px}
+  .qb .qd{font-size:10px;color:var(--muted);font-weight:700}
+  .qb .qe{font-size:13px;font-weight:800;margin-top:2px}
+  .qb.actual{border-left:3px solid var(--green)}
+  .qb.estimate{border-left:3px solid var(--gold)}
+  .qb.derived{border-left:3px solid var(--line)}
+  .led-k{font-size:10.5px;color:var(--muted);margin-top:9px}
+  .led-k i{font-style:normal;font-weight:700}
+  /* ── earnings play ─────────────────────────────────────────────────────── */
+  .ep-bar{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;margin:14px 0 4px}
+  .ep-field{display:flex;flex-direction:column;gap:6px}
+  .ep-field label{font-size:10px;letter-spacing:1.4px;text-transform:uppercase;
+    color:var(--muted);font-weight:700}
+  select{font-family:inherit;font-size:13.5px;font-weight:700;color:var(--dark);
+    background:#fff;border:1px solid var(--line);border-radius:9px;padding:10px 14px;
+    min-width:150px;cursor:pointer;appearance:none;
+    background-image:linear-gradient(45deg,transparent 50%,var(--gold) 50%),
+      linear-gradient(135deg,var(--gold) 50%,transparent 50%);
+    background-position:calc(100% - 19px) 18px,calc(100% - 14px) 18px;
+    background-size:5px 5px,5px 5px;background-repeat:no-repeat}
+  select#ep-sel{min-width:250px}
+  select:hover,select:focus{border-color:var(--gold);outline:none}
+  .ep-note{font-size:11px;color:var(--muted);padding-bottom:11px}
+  .ep-hero{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:18px 0 6px}
+  .ep-hero .stat .n{font-size:26px}
+  .ep-hero .stat .s{font-size:11px;color:var(--muted);margin-top:5px}
+  .chart{background:#fff;border:1px solid var(--line);border-radius:12px;
+    padding:16px 14px 10px;margin-top:14px}
+  .chart h3{font-size:11px;letter-spacing:1.4px;text-transform:uppercase;
+    color:var(--navy);font-weight:700;margin:0 0 2px;padding:0 6px}
+  .chart .cs{font-size:11px;color:var(--muted);margin:0 0 8px;padding:0 6px}
+  .chart svg{display:block;width:100%;height:auto}
+  /* sub-tabs: pre / day of / post release */
+  .subtabs{display:flex;gap:6px;margin:18px 0 0}
+  .subtab{background:#faf9f5;color:var(--muted);border:1px solid var(--line);
+    border-radius:9px;padding:9px 16px;font-weight:700;font-size:12.5px}
+  .subtab.active{background:var(--prio-bg);border-color:rgba(166,138,62,.55);color:var(--gold)}
+  .subtab:hover{color:var(--dark)}
+  .dists{display:grid;gap:14px;margin-top:12px}
+  .dists.two{grid-template-columns:1fr 1fr}
+  .dist{background:#fff;border:1px solid var(--line);border-radius:12px;padding:15px 16px 12px}
+  .dist .dh{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+    margin-bottom:2px}
+  .dist .dt{font-size:11px;letter-spacing:1.4px;text-transform:uppercase;
+    color:var(--navy);font-weight:700}
+  .dist .dn{font-size:10.5px;color:var(--muted)}
+  .qs{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:11px;
+    border-top:1px solid #f0efe9;padding-top:11px}
+  .q{text-align:center}
+  .q .ql{font-size:9.5px;letter-spacing:.8px;color:var(--muted);font-weight:700;
+    font-style:italic}
+  .q .qv{font-family:var(--font-h);font-size:15px;font-weight:800;margin-top:3px}
+  .ms{display:flex;gap:22px;justify-content:center;margin-top:10px}
+  .ms .msl{font-size:9.5px;letter-spacing:.8px;color:var(--muted);font-weight:700;
+    text-transform:uppercase}
+  .ms .msv{font-family:var(--font-h);font-size:16px;font-weight:800;margin-top:2px;
+    text-align:center}
+  /* move direction bar */
+  .dirbar{display:flex;align-items:center;gap:10px;margin-top:12px}
+  .dirbar .track{flex:1;height:11px;border-radius:6px;background:#efeee8;overflow:hidden;
+    display:flex}
+  .dirbar .dn-{background:var(--red)} .dirbar .up-{background:var(--green)}
+  .dirbar b{font-size:11.5px;font-weight:800;min-width:44px}
+  .interp{font-size:12.5px;color:var(--dark);background:var(--prio-bg);
+    border-left:3px solid var(--gold);border-radius:0 8px 8px 0;padding:10px 14px;
+    margin-top:12px;line-height:1.5}
+  .interp b{font-weight:800}
+  /* ledger */
+  .led{overflow-x:auto;margin-top:8px}
+  .led table{font-size:12.5px;min-width:1120px}
+  .led th{padding:9px 8px;font-size:9.5px;letter-spacing:.9px}
+  .led td{padding:8px;white-space:nowrap}
+  .led tr.next td{background:var(--prio-bg);font-weight:700}
+  .led tr.next td:first-child{border-left:3px solid var(--gold)}
+  .cellbar{position:relative;display:block;min-width:78px}
+  .cellbar i{position:absolute;top:50%;transform:translateY(-50%);height:12px;
+    border-radius:2px;opacity:.28}
+  .cellbar span{position:relative}
+  .g-bg{background:var(--green-bg)} .r-bg{background:var(--red-bg)}
+  .tag{display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:.6px;
+    border-radius:5px;padding:2px 6px;background:#f1f0ea;color:var(--navy)}
+  .qm{color:var(--muted);font-weight:400}
+  .vixtog{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--muted);
+    font-weight:600;padding-bottom:11px;cursor:pointer;user-select:none}
+  .vixtog input{appearance:none;width:34px;height:19px;border-radius:19px;background:#e6e4dc;
+    border:1px solid var(--line);position:relative;cursor:pointer;transition:.15s;margin:0}
+  .vixtog input:after{content:'';position:absolute;top:1.5px;left:2px;width:14px;height:14px;
+    border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:.15s}
+  .vixtog input:checked{background:var(--gold);border-color:var(--gold)}
+  .vixtog input:checked:after{left:17px}
+  .vixtog:hover span{color:var(--dark)}
+  /* toast */
+  .toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);
+    background:#fff;border:1px solid var(--gold);color:var(--dark);padding:13px 22px;
+    border-radius:10px;font-size:13.5px;font-weight:700;
+    box-shadow:0 10px 34px rgba(0,0,0,.16);opacity:0;pointer-events:none;
+    transition:.3s;z-index:50}
+  .toast.show{opacity:1}
+  .loading{text-align:center;color:var(--muted);padding:60px;font-size:14px}
+  /* footer */
+  .foot{display:flex;align-items:center;justify-content:space-between;
+    border-top:1px solid var(--line);margin-top:26px;padding-top:16px;flex-wrap:wrap;gap:10px}
+  .foot .src{font-size:10.5px;color:var(--muted);max-width:62%;line-height:1.4}
+  .foot .pf{font-family:var(--font-h);font-weight:800;font-size:15px;letter-spacing:3px;color:var(--gold)}
+  .foot .url{font-size:10.5px;color:var(--muted);margin-left:10px}
+  @media(max-width:980px){.dists.two{grid-template-columns:1fr}}
+  @media(max-width:720px){.stats,.ep-hero{grid-template-columns:repeat(2,1fr)}.hide-sm{display:none}.pad{padding:24px 20px}}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="accent"></div>
+  <div class="pad">
+    <div class="head">
+      <div class="brand">
+        <img src="https://48102387.fs1.hubspotusercontent-na1.net/hubfs/48102387/Proflex_Square200xLogo_TransparentBlack.png" alt="Proflex">
+        <span class="name">PROFLEX</span>
+      </div>
+      <span class="badge">Daily Stock Chartplay</span>
+    </div>
+
+    <h1>Daily <span class="g">Movers &amp; Drags</span> — Priority Watchlist Board</h1>
+    <p class="sub">Live equity board <b>via Yahoo Finance</b> &middot; 365-day chartplay, daily change &amp; 50-day trend &middot; <span id="updated">loading…</span></p>
+
+    <div class="divider"></div>
+
+    <div class="topbar">
+      <div class="stats" style="margin:0;flex:1;min-width:340px" id="stats"></div>
+      <div class="actions">
+        <button class="btn-ghost" id="refresh">↻ Refresh</button>
+        <button class="btn-gold" id="report">✉ Email Report</button>
+      </div>
+    </div>
+
+    <div class="tabs" id="tabs"></div>
+    <div id="view"><div class="loading">Loading live prices…</div></div>
+
+    <div class="foot">
+      <div class="src">Live pricing from Yahoo Finance. Daily change vs prior session close; 50-day trend from close series. ★ = priority watchlist. Not investment advice.</div>
+      <div><span class="pf">PROFLEX</span><span class="url">proflexfinance.com</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let DATA=[], NEWS={growthGazette:[],incomeInsider:[]}, TAB="movers";
+let FPE=null, FPE_LOADING=false, FPE_SORT="cy2Pe", FPE_DIR=1, FPE_OPEN=null;
+const $=s=>document.querySelector(s);
+const fmtVol=v=>v>=1e9?(v/1e9).toFixed(1)+'B':v>=1e6?(v/1e6).toFixed(1)+'M':
+  v>=1e3?(v/1e3).toFixed(0)+'K':(v||'—');
+
+function spark(points,up){
+  if(!points||points.length<2) return '';
+  const w=112,h=30,min=Math.min(...points),max=Math.max(...points),rng=(max-min)||1;
+  const pts=points.map((p,i)=>{
+    const x=(i/(points.length-1))*w,y=h-((p-min)/rng)*h;
+    return x.toFixed(1)+','+y.toFixed(1);
+  }).join(' ');
+  const col=up?'#16a34a':'#dc2626';
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
+    <polyline points="${pts}" fill="none" stroke="${col}" stroke-width="1.5"
+      stroke-linejoin="round"/></svg>`;
+}
+function changeCell(s){
+  if(!s.ok||s.changePct===null) return '<span class="err">no data</span>';
+  const c=s.changePct,cls=c>0?'up':c<0?'down':'flat',
+    arr=c>0?'▲':c<0?'▼':'—',sign=c>0?'+':'';
+  return `<span class="pill ${cls}">${arr} ${sign}${c.toFixed(2)}%</span>`;
+}
+function p50Cell(s){
+  if(s.pct50===null||s.pct50===undefined) return '<span class="co">—</span>';
+  const cls=s.pct50>=0?'p50up':'p50down',sign=s.pct50>=0?'+':'';
+  return `<span class="${cls}">${sign}${s.pct50.toFixed(2)}%</span>`;
+}
+function pctCell(v){
+  if(v===null||v===undefined) return '<span class="co">—</span>';
+  const cls=v>=0?'p50up':'p50down',sign=v>=0?'+':'';
+  return `<span class="${cls}">${sign}${v.toFixed(2)}%</span>`;
+}
+function nlRow(s){
+  const price=s.ok&&s.price!=null?'$'+s.price.toFixed(2):'—';
+  const star=s.priority?'<span class="star">★</span>':'';
+  return `<tr class="${s.priority?'prio':''}">
+    <td><span class="tk">${s.ticker}</span>${star}<div class="co">${s.company}</div></td>
+    <td class="r">${price}</td>
+    <td class="r">${changeCell(s)}</td>
+    <td class="r hide-sm">${pctCell(s.pct50)}</td>
+    <td class="r">${pctCell(s.ytd)}</td>
+    <td class="r">${pctCell(s.ytdTotal)}</td>
+  </tr>`;
+}
+function nlTable(rows){
+  if(!rows.length) return '<div class="loading">Loading live prices…</div>';
+  return `<table><thead><tr>
+    <th>Ticker / Company</th><th class="r">Price</th><th class="r">Daily</th>
+    <th class="r hide-sm">50-Day</th><th class="r">YTD</th>
+    <th class="r">Total Return</th>
+  </tr></thead><tbody>${rows.map(nlRow).join('')}</tbody></table>`;
+}
+function earningsCell(s){
+  if(!s.nextEarnings) return '<span class="co">—</span>';
+  const d=new Date(s.nextEarnings+'T00:00:00'),today=new Date();
+  today.setHours(0,0,0,0);
+  const days=Math.round((d-today)/86400000);
+  const soon=days>=0&&days<=14;
+  const label=d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  return `<span class="${soon?'p50down':'co'}">${label}</span>`;
+}
+function row(s){
+  const star=s.priority?'<span class="star">★</span>':'';
+  const price=s.ok&&s.price!=null?'$'+s.price.toFixed(2):'—';
+  const up=(s.changePct||0)>=0;
+  return `<tr class="${s.priority?'prio':''}">
+    <td><span class="tk">${s.ticker}</span>${star}<div class="co">${s.company}</div></td>
+    <td class="hide-sm"><span class="cat">${s.category}</span></td>
+    <td class="c hide-sm">${spark(s.spark,up)}</td>
+    <td class="r">${price}</td>
+    <td class="r">${changeCell(s)}</td>
+    <td class="r hide-sm">${p50Cell(s)}</td>
+    <td class="r hide-sm co">${fmtVol(s.volume)}</td>
+    <td class="r hide-sm">${earningsCell(s)}</td>
+  </tr>`;
+}
+function table(rows){
+  if(!rows.length) return '<div class="loading">Nothing here right now.</div>';
+  return `<table><thead><tr>
+    <th>Ticker / Company</th><th class="hide-sm">Sector</th>
+    <th class="c hide-sm">365-Day Chart</th><th class="r">Price</th>
+    <th class="r">Change</th><th class="r hide-sm">50-Day %</th>
+    <th class="r hide-sm">Volume</th><th class="r hide-sm">Next Earnings</th>
+  </tr></thead><tbody>${rows.map(row).join('')}</tbody></table>`;
+}
+function render(){
+  const valid=DATA.filter(s=>s.ok&&s.changePct!==null);
+  const movers=valid.filter(s=>s.changePct>=2).sort((a,b)=>b.changePct-a.changePct);
+  const drags=valid.filter(s=>s.changePct<=-2).sort((a,b)=>a.changePct-b.changePct);
+  const prio=DATA.filter(s=>s.priority);
+  $('#stats').innerHTML=`
+    <div class="stat"><div class="n g">${movers.length}</div><div class="l">Movers ≥ +2%</div></div>
+    <div class="stat"><div class="n r">${drags.length}</div><div class="l">Drags ≤ -2%</div></div>
+    <div class="stat"><div class="n gold">${prio.length}</div><div class="l">★ Watchlist</div></div>
+    <div class="stat"><div class="n d">${DATA.length}</div><div class="l">Total Tracked</div></div>`;
+  const cats=[...new Set(DATA.map(s=>s.category))].sort();
+  const tabDefs=[["movers","Top Movers"],["drags","Top Drags"],
+    ["earnings","📅 This Week's Earnings"],
+    ["gg","Growth Gazette"],["ii","Income Insider"],
+    ["watchlist","★ Watchlist"],["earnperf","⚡ Earnings Play"],
+    ["fwdpe","🧮 Forward P/E"],["all","All Stocks"],...cats.map(c=>["cat:"+c,c])];
+  $('#tabs').innerHTML=tabDefs.map(([id,label])=>
+    `<button class="tab ${TAB===id?'active':''}" data-tab="${id}">${label}</button>`).join('');
+  document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{TAB=b.dataset.tab;render();});
+  let html='';
+  if(TAB==="movers"){
+    html=`<div class="section-h"><span class="bar" style="background:var(--green)"></span>Top Movers <span>— ≥ +2% today</span></div>`+table(movers);
+  }else if(TAB==="drags"){
+    html=`<div class="section-h"><span class="bar" style="background:var(--red)"></span>Top Drags <span>— ≤ -2% today</span></div>`+table(drags);
+  }else if(TAB==="earnings"){
+    const today=new Date();today.setHours(0,0,0,0);
+    const dow=today.getDay(); // 0=Sun..6=Sat
+    const monOffset=dow===0?-6:1-dow;
+    const weekStart=new Date(today);weekStart.setDate(today.getDate()+monOffset);
+    const weekEnd=new Date(weekStart);weekEnd.setDate(weekStart.getDate()+6);
+    const inWeek=DATA.filter(s=>{
+      if(!s.nextEarnings) return false;
+      const d=new Date(s.nextEarnings+'T00:00:00');
+      return d>=weekStart&&d<=weekEnd;
+    }).sort((a,b)=>a.nextEarnings.localeCompare(b.nextEarnings));
+    const rangeLabel=weekStart.toLocaleDateString('en-US',{month:'short',day:'numeric'})+
+      ' – '+weekEnd.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    html=`<div class="section-h"><span class="bar" style="background:var(--gold)"></span>This Week's Earnings <span>— ${rangeLabel}</span></div>`+
+      (inWeek.length?table(inWeek):'<div class="loading">No tracked stocks report earnings this week.</div>');
+  }else if(TAB==="gg"){
+    html=`<div class="section-h"><span class="bar" style="background:var(--gold)"></span>Growth Gazette <span>— model portfolio · daily, 50-day, YTD price &amp; total return (incl. dividends)</span></div>`+nlTable(NEWS.growthGazette);
+  }else if(TAB==="ii"){
+    html=`<div class="section-h"><span class="bar" style="background:var(--gold)"></span>Income Insider <span>— model portfolio · daily, 50-day, YTD price &amp; total return (incl. dividends)</span></div>`+nlTable(NEWS.incomeInsider);
+  }else if(TAB==="watchlist"){
+    const w=[...prio].sort((a,b)=>(b.changePct??-99)-(a.changePct??-99));
+    html=`<div class="section-h"><span class="bar" style="background:var(--gold)"></span>Priority Watchlist</div>`+table(w);
+  }else if(TAB==="earnperf"){
+    html=epView();
+  }else if(TAB==="fwdpe"){
+    html=fpeView();
+    if(!FPE&&!FPE_LOADING) fpeLoad();
+  }else if(TAB==="all"){
+    const all=[...DATA].sort((a,b)=>(b.changePct??-999)-(a.changePct??-999));
+    html=table(all);
+  }else if(TAB.startsWith("cat:")){
+    const c=TAB.slice(4);
+    const rows=DATA.filter(s=>s.category===c).sort((a,b)=>(b.changePct??-999)-(a.changePct??-999));
+    html=`<div class="section-h"><span class="bar" style="background:var(--gold)"></span>${c}</div>`+table(rows);
+  }
+  $('#view').innerHTML=html;
+  epBind();
+  fpeBind();
+}
+
+/* ── Forward P/E on calendar-normalised estimates ─────────────────────────── */
+/* Each company reports on its own fiscal calendar, so a raw "forward P/E" compares
+   different spans of time (Yahoo's NVDA figure is FY2028; its AAPL figure is FY2027).
+   The backend rebuilds a quarterly EPS ledger and re-cuts it onto true calendar
+   years, so every multiple on this screen measures the same twelve months. */
+
+function fpeLoad(){
+  FPE_LOADING=true;
+  fetch('/api/forward-pe?t='+Date.now())
+    .then(r=>r.json())
+    .then(d=>{FPE=d;FPE_LOADING=false;if(TAB==="fwdpe")render();})
+    .catch(()=>{FPE={rows:[],error:true};FPE_LOADING=false;if(TAB==="fwdpe")render();});
+}
+
+const fpeNum=v=>v==null?'—':v.toFixed(2);
+const fpeGrowth=v=>v==null?'<span class="co">—</span>':
+  `<span class="${v>=0?'p50up':'p50down'}">${v>0?'+':v<0?'−':''}${Math.abs(v).toFixed(1)}%</span>`;
+
+function fpePe(v,partial,why){
+  if(v==null) return '<span class="pe na">n/m</span>';
+  return `<span class="pe">${v.toFixed(1)}×</span>`+
+    (partial?`<span class="part" title="${why}">◐</span>`:'');
+}
+
+function fpeRow(s,cy1,cy2){
+  const star=s.priority?'<span class="star">★</span>':'';
+  if(!s.ok){
+    return `<tr class="${s.priority?'prio':''}">
+      <td><span class="tk">${s.ticker}</span>${star}<div class="co">${s.company}</div></td>
+      <td class="c hide-sm"><span class="fye cal">—</span></td>
+      <td class="r">${s.price!=null?'$'+s.price.toFixed(2):'—'}</td>
+      <td colspan="7" class="co" style="font-style:italic">
+        ${s.error==='no estimates'?'No analyst estimates (ETF or uncovered)':'No data'}</td>
+    </tr>`;
+  }
+  const open=FPE_OPEN===s.ticker;
+  const p1=`CY${cy1} is only ${Math.round(s.cy1Coverage*100)}% covered by the estimate ledger; grossed up at the covered run-rate.`;
+  const p2=`CY${cy2} is only ${Math.round(s.cy2Coverage*100)}% covered — ${s.ticker}'s FY2 estimate ends ${s.fy2End||'before year end'}. Grossed up at the covered run-rate.`;
+  let html=`<tr class="fpe-row ${s.priority?'prio':''}" data-fpe="${s.ticker}">
+    <td><span class="tk">${s.ticker}</span>${star}<div class="co">${s.company}</div></td>
+    <td class="c hide-sm"><span class="fye${s.isCalendarFY?' cal':''}"
+      title="Fiscal year ends ${s.fyEndMonth}">${s.fyEndMonth}</span></td>
+    <td class="r">$${s.price!=null?s.price.toFixed(2):'—'}</td>
+    <td class="r hide-sm eps">${fpeNum(s.cy1Eps)}</td>
+    <td class="r">${fpePe(s.cy1Pe,s.cy1Partial,p1)}${s.mixedBasis?
+      `<span class="warn" title="Yahoo's quarterly prints and its annual consensus for ${s.ticker} differ by ${Math.round(s.basisDrift*100)}% — almost always GAAP actuals against non-GAAP consensus. The fiscal-year total is held to the annual consensus; treat the near-year figure with care.">&#9888;</span>`:''}</td>
+    <td class="r hide-sm eps">${fpeNum(s.cy2Eps)}</td>
+    <td class="r">${fpePe(s.cy2Pe,s.cy2Partial,p2)}</td>
+    <td class="r">${fpeGrowth(s.cyGrowth)}</td>
+    <td class="r hide-sm">${s.ntmPe!=null?s.ntmPe.toFixed(1)+'×':'<span class="co">n/m</span>'}</td>
+    <td class="r hide-sm co">${s.yahooForwardPE!=null?s.yahooForwardPE.toFixed(1)+'×':'—'}</td>
+  </tr>`;
+  if(open) html+=fpeLedger(s);
+  return html;
+}
+
+/* Drill-down: the quarterly ledger the calendar-year figures are cut from. */
+function fpeLedger(s){
+  const q=(s.ledger||[]).map(x=>{
+    const d=new Date(x.end+'T00:00:00');
+    return `<div class="qb ${x.kind}" title="${x.kind}">
+      <div class="qd">${d.toLocaleDateString('en-US',{month:'short',year:'2-digit'})}</div>
+      <div class="qe">${x.eps.toFixed(2)}</div></div>`;}).join('');
+  return `<tr class="led"><td colspan="10"><div class="led-in">
+    <div class="led-h">${s.ticker} — quarterly EPS ledger</div>
+    <div class="led-q">${q}</div>
+    <div class="led-k">
+      <i style="color:var(--green)">▌</i> reported actual &nbsp;
+      <i style="color:var(--gold)">▌</i> analyst quarter estimate &nbsp;
+      <i>▌</i> derived (fiscal-year residual spread across remaining quarters)
+      <br>FY1 ends <i>${s.fy1End}</i> at <i>${s.fy1Eps!=null?s.fy1Eps.toFixed(2):'—'}</i>
+      &nbsp;·&nbsp; FY2 ends <i>${s.fy2End||'—'}</i> at <i>${s.fy2Eps!=null?s.fy2Eps.toFixed(2):'—'}</i>
+      &nbsp;·&nbsp; ${s.analysts?s.analysts+' analysts':'coverage n/a'}
+      &nbsp;·&nbsp; trailing P/E ${s.trailingPE!=null?s.trailingPE.toFixed(1)+'×':'n/m'}
+    </div></div></td></tr>`;
+}
+
+const FPE_COLS=[
+  ['ticker','Ticker / Company','',''],
+  ['fyEndMonth','FY End','c hide-sm',''],
+  ['price','Price','r',''],
+  ['cy1Eps','CY__1 EPS','r hide-sm',''],
+  ['cy1Pe','CY__1 P/E','r',''],
+  ['cy2Eps','CY__2 EPS','r hide-sm',''],
+  ['cy2Pe','CY__2 P/E','r',''],
+  ['cyGrowth','EPS Growth','r',''],
+  ['ntmPe','NTM P/E','r hide-sm',''],
+  ['yahooForwardPE','Yahoo Fwd','r hide-sm','']];
+
+function fpeView(){
+  if(FPE_LOADING||!FPE)
+    return '<div class="loading">Building calendar-year estimate ledgers…</div>';
+  const rows=FPE.rows||[];
+  if(!rows.length) return '<div class="loading">No estimate data available.</div>';
+  const cy1=rows.find(r=>r.ok)?.cy1Year??new Date().getFullYear();
+  const cy2=cy1+1;
+
+  /* Sort: nulls always sink, regardless of direction. */
+  const sorted=[...rows].sort((a,b)=>{
+    if(FPE_SORT==='ticker') return a.ticker.localeCompare(b.ticker)*FPE_DIR;
+    const av=a[FPE_SORT], bv=b[FPE_SORT];
+    if(av==null&&bv==null) return a.ticker.localeCompare(b.ticker);
+    if(av==null) return 1;
+    if(bv==null) return -1;
+    return (av-bv)*FPE_DIR;
+  });
+
+  const covered=rows.filter(r=>r.ok);
+  const pes=covered.map(r=>r.cy2Pe).filter(v=>v!=null).sort((a,b)=>a-b);
+  const med=pes.length?(pes.length%2?pes[(pes.length-1)/2]
+    :(pes[pes.length/2-1]+pes[pes.length/2])/2):null;
+  const grow=covered.map(r=>r.cyGrowth).filter(v=>v!=null).sort((a,b)=>a-b);
+  const medG=grow.length?(grow.length%2?grow[(grow.length-1)/2]
+    :(grow[grow.length/2-1]+grow[grow.length/2])/2):null;
+  const nonCal=covered.filter(r=>!r.isCalendarFY).length;
+
+  const head=FPE_COLS.map(([k,l,cls])=>{
+    const label=l.replace('__1',cy1).replace('__2',cy2);
+    const on=FPE_SORT===k;
+    return `<th class="${cls} sortable" data-fpe-sort="${k}">${label}${
+      on?`<span class="ar">${FPE_DIR>0?'▲':'▼'}</span>`:''}</th>`;}).join('');
+
+  return `<div class="section-h"><span class="bar" style="background:var(--gold)"></span>
+      Forward P/E <span>— every fiscal year re-cut onto the calendar · as of ${FPE.asOf}</span></div>
+    <div class="stats" style="margin:10px 0 0">
+      <div class="stat"><div class="n gold">${covered.length}</div><div class="l">With Estimates</div></div>
+      <div class="stat"><div class="n d">${med!=null?med.toFixed(1)+'×':'—'}</div><div class="l">Median CY${cy2} P/E</div></div>
+      <div class="stat"><div class="n ${medG>=0?'g':'r'}">${medG!=null?(medG>0?'+':'')+medG.toFixed(1)+'%':'—'}</div><div class="l">Median EPS Growth</div></div>
+      <div class="stat"><div class="n d">${nonCal}</div><div class="l">Off-Calendar Fiscal Years</div></div>
+    </div>
+    <div class="fpe-note">
+      <b>Why these differ from the headline numbers.</b> A vendor "forward P/E" divides price by
+      the next <i>fiscal</i> year — for NVDA that is the year ending Jan 2028, for AAPL the year
+      ending Sep 2027. Those are different twelve-month spans, so the multiples are not comparable.
+      Here each company's quarterly EPS ledger (reported quarters + analyst quarters + the
+      fiscal-year residual) is re-cut by day overlap onto <b>CY${cy1}</b> and <b>CY${cy2}</b>,
+      so every column measures the same calendar window.
+      <b>NTM P/E</b> is the rolling next-twelve-months multiple — it needs no extrapolation and is
+      the cleanest cross-check. <span class="part">◐</span> marks a year the estimate ledger only
+      partly covers (grossed up at the covered run-rate) — hover it for the coverage.
+      <span class="warn">&#9888;</span> marks a name whose quarterly and annual feeds sit on
+      different accounting bases — hover for the size of the gap.
+      Click any row for its quarterly ledger.
+    </div>
+    <table><thead><tr>${head}</tr></thead>
+    <tbody>${sorted.map(r=>fpeRow(r,cy1,cy2)).join('')}</tbody></table>`;
+}
+
+function fpeBind(){
+  document.querySelectorAll('[data-fpe-sort]').forEach(th=>th.onclick=()=>{
+    const k=th.dataset.fpeSort;
+    /* Re-clicking a column flips it; a new column starts ascending (cheapest
+       multiple first), except growth where "best first" means descending. */
+    if(FPE_SORT===k) FPE_DIR=-FPE_DIR;
+    else {FPE_SORT=k;FPE_DIR=(k==='cyGrowth')?-1:1;}
+    render();
+  });
+  document.querySelectorAll('[data-fpe]').forEach(tr=>tr.onclick=()=>{
+    FPE_OPEN=FPE_OPEN===tr.dataset.fpe?null:tr.dataset.fpe;
+    render();
+  });
+}
+
+/* ── Earnings play ────────────────────────────────────────────────────────── */
+const EP_CACHE={};
+let EP_TICKER='NVDA', EP_LOADING=false, EP_YEARS=10, EP_SUB='day', EP_VIX=false;
+const EP_VIX_BAND=5;   // VIX points either side of today's level
+
+/* The five measured windows, mirroring earnings_perf.METRICS. */
+const EP_M={
+  between:{label:'Since Last Print',note:'previous reaction close → this print'},
+  pre15  :{label:'15 Days Before',   note:'run-up into the print'},
+  reaction:{label:'Reaction',        note:'first close after the print'},
+  fwd5   :{label:'5 Days After',     note:'from the reaction close'},
+  fwd10  :{label:'10 Days After',    note:'from the reaction close'}};
+const EP_GROUPS={pre:['between','pre15'],day:['reaction'],post:['fwd5','fwd10']};
+const EP_SUBS=[['pre','Pre Release'],['day','Day of Release'],['post','Post Release']];
+
+const epSign=v=>v==null?'—':(v>0?'+':v<0?'−':'')+Math.abs(v).toFixed(2)+'%';
+const epS1=v=>v==null?'—':(v>0?'+':v<0?'−':'')+Math.abs(v).toFixed(1)+'%';
+const epCol=v=>v==null?'var(--muted)':v>0?'var(--green)':v<0?'var(--red)':'var(--muted)';
+const epCls=v=>v==null?'co':v>=0?'p50up':'p50down';
+const epDate=d=>d?new Date(d+'T00:00:00').toLocaleDateString('en-US',
+  {month:'short',day:'numeric',year:'numeric'}):'—';
+const epMon=d=>d?new Date(d+'T00:00:00').toLocaleDateString('en-US',
+  {month:'short',year:'2-digit'}).replace(' ',"-"):'—';
+const epEps=v=>v==null?'—':'$'+v.toFixed(2);
+const epDol=v=>v==null?'—':(v<0&&Math.abs(v)>=0.005?'−$':'$')+Math.abs(v).toFixed(2);
+
+/* ── client-side statistics (so the window filter actually refilters) ─────── */
+function epHist(vals,bins=13){
+  if(vals.length<2) return [];
+  let lo=Math.min(...vals),hi=Math.max(...vals);
+  if(hi-lo<1e-9){lo-=1;hi+=1;}
+  let step=Math.max((hi-lo)/bins,0.5); step=Math.round(step*2)/2||0.5;
+  const start=Math.floor(lo/step)*step,n=Math.max(1,Math.ceil((hi-start)/step));
+  const out=Array.from({length:n},(_,i)=>({x0:start+i*step,x1:start+(i+1)*step,n:0}));
+  vals.forEach(v=>out[Math.min(Math.floor((v-start)/step),n-1)].n++);
+  return out;
+}
+function epStats(raw){
+  const vals=raw.filter(v=>v!=null);
+  if(!vals.length) return {n:0};
+  const s=[...vals].sort((a,b)=>a-b),n=s.length;
+  const q=p=>{const k=(n-1)*p/100,lo=Math.floor(k),hi=Math.min(lo+1,n-1);
+    return s[lo]+(s[hi]-s[lo])*(k-lo);};
+  const mean=vals.reduce((a,b)=>a+b,0)/n;
+  return {n,mean,
+    sd:n>1?Math.sqrt(vals.reduce((a,b)=>a+(b-mean)**2,0)/(n-1)):null,
+    q05:q(5),q20:q(20),q50:q(50),q80:q(80),q95:q(95),
+    avgAbs:vals.reduce((a,b)=>a+Math.abs(b),0)/n,
+    up:vals.filter(v=>v>0).length,min:s[0],max:s[n-1],hist:epHist(vals)};
+}
+function epCorr(evs,kx,ky){
+  const pts=evs.filter(e=>e[kx]!=null&&e[ky]!=null).map(e=>[e[kx],e[ky]]);
+  if(pts.length<4) return null;
+  const n=pts.length,mx=pts.reduce((a,p)=>a+p[0],0)/n,my=pts.reduce((a,p)=>a+p[1],0)/n;
+  const sx=Math.sqrt(pts.reduce((a,p)=>a+(p[0]-mx)**2,0)),
+        sy=Math.sqrt(pts.reduce((a,p)=>a+(p[1]-my)**2,0));
+  if(!sx||!sy) return null;
+  return {r:pts.reduce((a,p)=>a+(p[0]-mx)*(p[1]-my),0)/(sx*sy),n};
+}
+/* Mean outcome split by the sign of the conditioning window. */
+function epCond(evs,ck,ok){
+  const pick=f=>evs.filter(e=>e[ck]!=null&&e[ok]!=null&&f(e[ck])).map(e=>e[ok]);
+  const up=pick(v=>v>0),dn=pick(v=>v<=0);
+  if(!up.length||!dn.length) return null;
+  const m=a=>a.reduce((x,y)=>x+y,0)/a.length;
+  return {upN:up.length,upMean:m(up),dnN:dn.length,dnMean:m(dn)};
+}
+
+/* Consecutive same-direction reactions at the recent end of the window. */
+function epStreak(evs){
+  const r=evs.map(e=>e.reaction).filter(v=>v!=null);
+  if(!r.length) return null;
+  const up=r[r.length-1]>0; let n=0;
+  for(let i=r.length-1;i>=0;i--){ if((r[i]>0)!==up) break; n++; }
+  return {n,up};
+}
+
+/* ── price chart with a marker on every print (mock 1, top) ───────────────── */
+function epPriceChart(d,evs){
+  const S=d.series; if(!S||!S.dates.length||!evs.length) return '';
+  const from=evs[0].preCloseDate;
+  const i0=S.dates.findIndex(x=>x>=from);
+  const dates=S.dates.slice(Math.max(0,i0-20)),closes=S.closes.slice(Math.max(0,i0-20));
+  if(closes.length<5) return '';
+  const W=1180,H=250,L=54,R=16,T=14,B=26;
+  const lo=Math.min(...closes),hi=Math.max(...closes);
+  // A 10-year compounder flattens to a hockey stick on a linear axis; switch to
+  // log so every print sits on a readable part of the curve.
+  const log=lo>0&&hi/lo>20,tf=v=>log?Math.log10(v):v;
+  const t0=tf(lo),t1=tf(hi),rng=(t1-t0)||1;
+  const x=i=>L+(i/(closes.length-1))*(W-L-R);
+  const y=v=>T+(1-(tf(v)-t0)/rng)*(H-T-B);
+  const line=closes.map((c,i)=>x(i).toFixed(1)+' '+y(c).toFixed(1)).join(' L ');
+  let grid='';
+  for(let i=0;i<=4;i++){const v=log?Math.pow(10,t0+rng*i/4):lo+rng*i/4,yy=y(v);
+    grid+=`<line x1="${L}" x2="${W-R}" y1="${yy}" y2="${yy}" stroke="#f0efe9"/>
+      <text x="${L-8}" y="${yy+3.5}" text-anchor="end" font-size="10" fill="#5a6672">$${v>=100?v.toFixed(0):v>=10?v.toFixed(1):v.toFixed(2)}</text>`;}
+  const idx={}; dates.forEach((dt,i)=>idx[dt]=i);
+  const dots=evs.map(e=>{
+    const i=idx[e.preCloseDate]; if(i==null) return '';
+    const c=e.reaction==null?'#1a2f4a':e.reaction>=0?'#16a34a':'#dc2626';
+    return `<circle cx="${x(i).toFixed(1)}" cy="${y(closes[i]).toFixed(1)}" r="3.6"
+      fill="${c}" stroke="#fff" stroke-width="1.1"><title>${e.date} · ${epSign(e.reaction)}</title></circle>`;
+  }).join('');
+  let ticks='';
+  for(let k=0;k<5;k++){const i=Math.round(k*(dates.length-1)/4);
+    ticks+=`<text x="${x(i).toFixed(1)}" y="${H-8}" text-anchor="${k===0?'start':k===4?'end':'middle'}"
+      font-size="10" fill="#5a6672">${epMon(dates[i])}</text>`;}
+  return `<div class="chart"><h3>${d.ticker} — price with every print marked</h3>
+    <p class="cs">${evs.length} prints · dot coloured by that day's reaction · ${epMon(dates[0])} to ${epMon(dates[dates.length-1])}${log?' · log scale':''}</p>
+    <svg viewBox="0 0 ${W} ${H}" role="img">${grid}
+      <path d="M ${x(0)} ${H-B} L ${line} L ${x(closes.length-1)} ${H-B} Z" fill="#a68a3e" opacity=".10"/>
+      <path d="M ${line}" fill="none" stroke="#a68a3e" stroke-width="1.6" stroke-linejoin="round"/>
+      ${dots}<line x1="${L}" x2="${W-R}" y1="${H-B}" y2="${H-B}" stroke="#e6e4dc"/>
+    </svg></div>`;
+}
+
+/* ── histogram + quantiles for one window (mock 1, right) ─────────────────── */
+function epDist(key,evs,wide){
+  const st=epStats(evs.map(e=>e[key])),M=EP_M[key];
+  if(!st.n) return `<div class="dist"><div class="dh"><span class="dt">${M.label}</span></div>
+    <div class="ep-note">no data in this window</div></div>`;
+  const W=wide?760:470,H=132,L=30,R=10,T=10,B=22;
+  const maxN=Math.max(...st.hist.map(h=>h.n))||1;
+  const lo=st.hist[0].x0,hi=st.hist[st.hist.length-1].x1;
+  const x=v=>L+((v-lo)/((hi-lo)||1))*(W-L-R);
+  const bars=st.hist.map(h=>{
+    if(!h.n) return '';
+    const x0=x(h.x0),x1=x(h.x1),ht=(h.n/maxN)*(H-T-B);
+    return `<rect x="${(x0+1).toFixed(1)}" y="${(H-B-ht).toFixed(1)}"
+      width="${Math.max(1,x1-x0-2).toFixed(1)}" height="${ht.toFixed(1)}" rx="2"
+      fill="${h.x1<=0?'#dc2626':'#16a34a'}" opacity=".55"><title>${h.x0}% to ${h.x1}% · ${h.n}</title></rect>`;
+  }).join('');
+  let ax='';
+  for(let k=0;k<=4;k++){const v=lo+(hi-lo)*k/4;
+    ax+=`<text x="${x(v).toFixed(1)}" y="${H-6}" text-anchor="middle" font-size="9.5"
+      fill="#5a6672">${v>0?'+':''}${v.toFixed(0)}</text>`;}
+  const zx=x(0),mx=x(st.q50);
+  const upPct=st.up/st.n*100,dnPct=100-upPct;
+  const QS=[['q05',st.q05],['q20',st.q20],['q50',st.q50],['q80',st.q80],['q95',st.q95]];
+  return `<div class="dist">
+    <div class="dh"><span class="dt">${M.label}</span><span class="dn">${M.note} · n=${st.n}</span></div>
+    <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto" role="img">
+      ${bars}
+      <line x1="${zx.toFixed(1)}" x2="${zx.toFixed(1)}" y1="${T}" y2="${H-B}" stroke="#c9c6bb" stroke-width="1"/>
+      <line x1="${mx.toFixed(1)}" x2="${mx.toFixed(1)}" y1="${T}" y2="${H-B}" stroke="#a68a3e" stroke-width="1.8" stroke-dasharray="4 3"/>
+      <line x1="${L}" x2="${W-R}" y1="${H-B}" y2="${H-B}" stroke="#e6e4dc"/>${ax}
+    </svg>
+    <div class="qs">${QS.map(([l,v])=>`<div class="q"><div class="ql">${l}</div>
+      <div class="qv" style="color:${epCol(v)}">${epS1(v)}</div></div>`).join('')}</div>
+    <div class="ms">
+      <div><div class="msl">average</div><div class="msv" style="color:${epCol(st.mean)}">${epS1(st.mean)}</div></div>
+      <div><div class="msl">std dev</div><div class="msv">±${st.sd==null?'—':st.sd.toFixed(1)+'%'}</div></div>
+      <div><div class="msl">typical size</div><div class="msv">±${st.avgAbs.toFixed(1)}%</div></div>
+      <div><div class="msl">range</div><div class="msv" style="font-size:13px">${epS1(st.min)} → ${epS1(st.max)}</div></div>
+    </div>
+    <div class="dirbar"><b style="color:var(--red)">${dnPct.toFixed(1)}%</b>
+      <span class="track"><i class="dn-" style="width:${dnPct}%;position:static;transform:none;height:100%"></i>
+      <i class="up-" style="width:${upPct}%;position:static;transform:none;height:100%"></i></span>
+      <b style="color:var(--green);text-align:right">${upPct.toFixed(1)}%</b></div>
+    <div class="ep-note" style="text-align:center;padding:4px 0 0">move direction (% of time)</div>
+  </div>`;
+}
+
+/* One line, from the numbers. */
+function epInterp(sub,evs,d){
+  const f=(k)=>epStats(evs.map(e=>e[k]));
+  if(sub==='pre'){
+    const c=epCond(evs,'pre15','reaction'),r=epCorr(evs,'pre15','reaction'),
+          b=epCorr(evs,'between','reaction'),p=f('pre15');
+    if(!c||!r) return '';
+    return `<div class="interp">Up into the print <b>${(p.up/p.n*100).toFixed(0)}%</b> of the time
+      (avg ${epS1(p.mean)} over 15 days). When it runs up, the reaction averages
+      <b style="color:${epCol(c.upMean)}">${epS1(c.upMean)}</b> (n=${c.upN}); when it doesn't,
+      <b style="color:${epCol(c.dnMean)}">${epS1(c.dnMean)}</b> (n=${c.dnN}).
+      Correlation to the reaction: <b>r=${r.r.toFixed(2)}</b> for 15-day,
+      <b>r=${b?b.r.toFixed(2):'—'}</b> since last print.</div>`;
+  }
+  if(sub==='day'){
+    const st=f('reaction'),tp=d.summary.typicalDay,sk=epStreak(evs);
+    const dur=evs.filter(e=>e.duration!=null);
+    const ad=dur.length?dur.reduce((a,e)=>a+e.duration,0)/dur.length:null;
+    return `<div class="interp">Typical reaction <b>±${st.avgAbs.toFixed(1)}%</b>${tp?`, <b>${(st.avgAbs/tp).toFixed(1)}×</b> a normal session`:''} ·
+      up <b>${(st.up/st.n*100).toFixed(0)}%</b> of the time${sk?` · ${sk.n} straight ${sk.up?'up':'down'}`:''}${ad?` · move runs <b>${ad.toFixed(1)}</b> sessions`:''}.</div>`;
+  }
+  const r5=epCorr(evs,'reaction','fwd5'),r10=epCorr(evs,'reaction','fwd10'),
+        c=epCond(evs,'reaction','fwd5'),s5=f('fwd5');
+  if(!r5) return '';
+  return `<div class="interp">After the print the next 5 days average
+    <b style="color:${epCol(s5.mean)}">${epS1(s5.mean)}</b> ·
+    reaction → 5D <b>r=${r5.r.toFixed(2)}</b>, → 10D <b>r=${r10?r10.r.toFixed(2):'—'}</b>${c?` ·
+    a green reaction is followed by ${epS1(c.upMean)}, a red one by ${epS1(c.dnMean)}`:''}.</div>`;
+}
+
+/* ── the ledger (mock 2) ─────────────────────────────────────────────────── */
+const LED_COLS=[['between','Since Last Print'],['pre15','15D Before'],
+  ['reaction','Reaction'],['fwd5','5D Fwd'],['fwd10','10D Fwd']];
+function epBarCell(v,scale){
+  if(v==null) return '<span class="co">—</span>';
+  const w=Math.min(Math.abs(v)/scale,1)*38,neg=v<0;
+  return `<span class="cellbar"><i class="${neg?'r-bg':'g-bg'}"
+    style="${neg?'right:50%':'left:50%'};width:${w.toFixed(1)}%;background:${neg?'var(--red)':'var(--green)'}"></i>
+    <span class="${epCls(v)}">${epSign(v)}</span></span>`;
+}
+function epLedger(d,evs){
+  const scale=Math.max(...evs.map(e=>Math.abs(e.between||0)),20);
+  const n=d.next||{};
+  const nextRow=!n.date?'':`<tr class="next">
+    <td>${epDate(n.date)}${n.estimated?' <span class="tag">est</span>':''}</td>
+    <td>${epMon(n.periodEnd)}</td>
+    <td class="r">${epEps(n.epsEstimate)}</td>
+    <td class="r qm">???</td><td class="r qm">???</td><td class="r qm">???</td>
+    <td class="c"><span class="tag">${n.timing||'—'}</span></td>
+    <td class="r">${epBarCell(n.between,scale)}</td>
+    <td class="r"><span class="${epCls(n.pre15)}">${epSign(n.pre15)}</span></td>
+    <td class="r qm">???</td><td class="r qm">???</td><td class="r qm">???</td>
+    <td class="c qm hide-sm">—</td><td class="r qm hide-sm">—</td><td class="r qm hide-sm">—</td></tr>`;
+  const rows=[...evs].reverse().map(e=>`<tr>
+    <td><span class="tk" style="font-size:12.5px">${epDate(e.date)}</span></td>
+    <td class="co">${epMon(e.periodEnd)}</td>
+    <td class="r">${epEps(e.epsEstimate)}</td>
+    <td class="r">${epEps(e.epsActual)}</td>
+    <td class="r"><span class="${epCls(e.surpriseAbs)}">${epDol(e.surpriseAbs)}</span></td>
+    <td class="r"><span class="${epCls(e.surprisePct)}">${epSign(e.surprisePct)}</span></td>
+    <td class="c"><span class="tag">${e.timing}</span></td>
+    <td class="r">${e.gapBefore?'<span class="co" title="a print is missing from Yahoo’s history here">n/a</span>':epBarCell(e.between,scale)}</td>
+    <td class="r"><span class="${epCls(e.pre15)}">${epSign(e.pre15)}</span></td>
+    <td class="r"><span class="${epCls(e.reaction)}">${epSign(e.reaction)}</span></td>
+    <td class="r"><span class="${epCls(e.fwd5)}">${epSign(e.fwd5)}</span></td>
+    <td class="r"><span class="${epCls(e.fwd10)}">${epSign(e.fwd10)}</span></td>
+    <td class="c co hide-sm">${e.duration==null?'—':e.duration}</td>
+    <td class="r hide-sm"><span class="${epCls(e.spy)}">${epSign(e.spy)}</span></td>
+    <td class="r co hide-sm">${e.vix==null?'—':e.vix.toFixed(1)}</td></tr>`).join('');
+  return `<div class="led"><table><thead><tr>
+    <th>Earnings Date</th><th>Period</th><th class="r">Estimate</th><th class="r">Reported</th>
+    <th class="r">Surprise</th><th class="r">% Surprise</th><th class="c">Time</th>
+    <th class="r">Since Last Print</th><th class="r">15D Before</th><th class="r">Reaction</th>
+    <th class="r">5D Fwd</th><th class="r">10D Fwd</th>
+    <th class="c hide-sm">Dur</th><th class="r hide-sm">SPY</th><th class="r hide-sm">VIX</th>
+  </tr></thead><tbody>${nextRow}${rows}</tbody></table></div>`;
+}
+
+function epHero(d,evs){
+  const n=d.next||{},st=epStats(evs.map(e=>e.reaction));
+  const days=n.daysAway;
+  const when=days==null?'—':days===0?'today':days>0?`in ${days} day${days===1?'':'s'}`:`${-days}d ago`;
+  const r=epCorr(evs,'pre15','reaction');
+  const up=st.n?st.up/st.n*100:null;
+  return `<div class="ep-hero">
+    <div class="stat"><div class="n gold">${n.date?epDate(n.date).replace(/, \d{4}$/,''):'—'}</div>
+      <div class="l">Next Print</div>
+      <div class="s">${when}${n.timing?' · '+n.timing:''} · est ${epEps(n.epsEstimate)}</div></div>
+    <div class="stat"><div class="n d">±${st.n?st.avgAbs.toFixed(1):'—'}%</div>
+      <div class="l">Typical Reaction</div>
+      <div class="s">${d.summary.typicalDay?(st.avgAbs/d.summary.typicalDay).toFixed(1)+'× a normal session':'&nbsp;'}</div></div>
+    <div class="stat"><div class="n ${up>=50?'g':'r'}">${up==null?'—':up.toFixed(0)+'% up'}</div>
+      <div class="l">Reaction Direction</div>
+      <div class="s">median ${epS1(st.q50)} · σ ±${st.sd?st.sd.toFixed(1):'—'}%</div></div>
+    <div class="stat"><div class="n d">${r?(r.r>0?'+':'−')+Math.abs(r.r).toFixed(2):'—'}</div>
+      <div class="l">15D Before → Reaction</div>
+      <div class="s">correlation over ${r?r.n:0} prints</div></div>
+  </div>`;
+}
+
+function epFilter(d){
+  if(!d.events.length) return [];
+  const last=new Date(d.lastCloseDate+'T00:00:00');
+  const cut=new Date(last); cut.setFullYear(cut.getFullYear()-EP_YEARS);
+  const iso=cut.toISOString().slice(0,10);
+  let evs=d.events.filter(e=>e.date>=iso);
+  if(EP_VIX&&d.vixNow!=null)
+    evs=evs.filter(e=>e.vix!=null&&Math.abs(e.vix-d.vixNow)<=EP_VIX_BAND);
+  return evs;
+}
+
+function epView(){
+  const opts=[...DATA].map(s=>s.ticker).sort();
+  const d=EP_CACHE[EP_TICKER];
+  const bar=`<div class="ep-bar">
+    <div class="ep-field"><label for="ep-sel">Stock</label>
+      <select id="ep-sel">${opts.map(t=>{
+        const s=DATA.find(x=>x.ticker===t);
+        return `<option value="${t}"${t===EP_TICKER?' selected':''}>${t} — ${s?s.company:t}</option>`;
+      }).join('')}</select></div>
+    <div class="ep-field"><label for="ep-years">Window</label>
+      <select id="ep-years">${[10,5,3,2].map(y=>
+        `<option value="${y}"${y===EP_YEARS?' selected':''}>last ${y} years</option>`).join('')}</select></div>
+    <label class="vixtog"><input type="checkbox" id="ep-vix"${EP_VIX?' checked':''}>
+      <span>keep prints with similar VIX${d&&d.vixNow!=null?` (~${d.vixNow.toFixed(1)} ±${EP_VIX_BAND})`:''}</span></label>
+    <div class="ep-note">Windows are trading sessions, anchored on the last close before the announcement.</div>
+  </div>`;
+  let body;
+  if(EP_LOADING||!d) body='<div class="loading">Loading earnings history…</div>';
+  else if(!d.ok) body=`<div class="loading">Couldn't load ${EP_TICKER}: ${d.error}</div>`;
+  else if(!d.events.length) body=`<div class="loading">${EP_TICKER} has no reported earnings history — funds and ETFs don't print.</div>`;
+  else{
+    const evs=epFilter(d);
+    if(evs.length<2) body=`<div class="loading">Only ${evs.length} print${evs.length===1?'':'s'} match — widen the window${EP_VIX?' or drop the VIX filter':''}.</div>`;
+    else{
+      const keys=EP_GROUPS[EP_SUB];
+      body=epHero(d,evs)+epPriceChart(d,evs)
+        +`<div class="subtabs">${EP_SUBS.map(([id,l])=>
+            `<button class="subtab ${EP_SUB===id?'active':''}" data-sub="${id}">${l}</button>`).join('')}</div>`
+        +`<div class="dists${keys.length>1?' two':''}">${keys.map(k=>epDist(k,evs,keys.length===1)).join('')}</div>`
+        +epInterp(EP_SUB,evs,d)
+        +`<div class="section-h" style="margin-top:22px"><span class="bar" style="background:var(--gold)"></span>
+            Print by print <span>— ${evs.length} prints${EP_VIX?' at a similar VIX':''} · EPS on today's share basis</span></div>`
+        +epLedger(d,evs);
+    }
+  }
+  return `<div class="section-h"><span class="bar" style="background:var(--gold)"></span>
+    Earnings Play <span>— ${EP_TICKER} into, on, and after the print</span></div>`+bar+body;
+}
+
+function epBind(){
+  const es=$('#ep-sel'); if(!es) return;
+  es.onchange=()=>{EP_TICKER=es.value;history.replaceState(null,'','#earnperf/'+EP_TICKER);epLoad(EP_TICKER);};
+  const ey=$('#ep-years'); if(ey) ey.onchange=()=>{EP_YEARS=+ey.value;render();};
+  const ev=$('#ep-vix'); if(ev) ev.onchange=()=>{EP_VIX=ev.checked;render();};
+  document.querySelectorAll('.subtab').forEach(b=>b.onclick=()=>{EP_SUB=b.dataset.sub;render();});
+  if(!EP_CACHE[EP_TICKER]&&!EP_LOADING) epLoad(EP_TICKER);
+}
+
+async function epLoad(t){
+  if(EP_CACHE[t]){render();return;}
+  EP_LOADING=true;render();
+  try{
+    const r=await fetch('/api/earnings-perf?ticker='+encodeURIComponent(t));
+    EP_CACHE[t]=await r.json();
+  }catch(e){EP_CACHE[t]={ok:false,error:'request failed'};}
+  EP_LOADING=false;render();
+}
+
+function toast(msg,ok=true){
+  const t=$('#toast');t.textContent=msg;
+  t.style.borderColor=ok?'var(--gold)':'var(--red)';
+  t.classList.add('show');setTimeout(()=>t.classList.remove('show'),4200);
+}
+async function load(){
+  $('#view').innerHTML='<div class="loading">Loading live prices…</div>';
+  try{
+    const r=await fetch('/api/stocks');DATA=await r.json();
+    const now=new Date().toLocaleString('en-US',{dateStyle:'medium',timeStyle:'short'});
+    const failed=DATA.filter(s=>!s.ok).length;
+    $('#updated').innerHTML=`updated <b>${now}</b>`+
+      (failed?` · <span style="color:var(--red)">${failed} failed</span>`:'');
+    render();
+  }catch(e){$('#view').innerHTML='<div class="loading">Failed to load. Is the server running?</div>';}
+  loadNewsletters();
+}
+async function loadNewsletters(){
+  try{
+    const r=await fetch('/api/newsletters');NEWS=await r.json();
+    if(TAB==="gg"||TAB==="ii") render();
+  }catch(e){/* newsletter board is optional; main board still renders */}
+}
+/* Deep link: #earnperf/NVDA reopens a specific stock's earnings view. */
+(function(){
+  const m=/^#earnperf(?:\/([A-Z.\-]+))?$/i.exec(location.hash||'');
+  if(m){TAB='earnperf'; if(m[1]) EP_TICKER=m[1].toUpperCase();}
+})();
+$('#refresh').onclick=load;
+$('#report').onclick=async function(){
+  this.disabled=true;this.textContent='Sending…';
+  try{
+    const r=await fetch('/api/email',{method:'POST'});const d=await r.json();
+    if(d.ok) toast(`✓ Emailed to ${d.to} — ${d.movers} movers, ${d.drags} drags`);
+    else toast('✗ '+(d.error||'failed'),false);
+  }catch(e){toast('✗ Send failed',false);}
+  this.disabled=false;this.textContent='✉ Email Report';
+};
+load();
+</script>
+</body>
+</html>
